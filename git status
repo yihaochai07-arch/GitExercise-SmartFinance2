@@ -1,0 +1,44 @@
+[33mcommit 19d7075cc107833a00df0804e097e784e319271c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Darren1788 <darrenng2399@gmail.com>
+Date:   Tue May 5 17:37:03 2026 +0800
+
+    modified:   src/hooks/useAccounts.ts
+
+[33mcommit fcc53bba7b327ddc7f7697e536a542313c047612[m
+Author: Darren1788 <darrenng2399@gmail.com>
+Date:   Tue May 5 17:31:33 2026 +0800
+
+    https://github.com/yihaochai07-arch/GitExercise-SmartFinance2.git
+    
+    Co-authored-by: Copilot <copilot@github.com>
+
+[33mcommit 569b23ce64f1093c7249f2582f746d5816003ce7[m
+Author: Yi Hao <yihaochai07@gmail.com>
+Date:   Sun May 3 00:27:36 2026 +0800
+
+    coding in useCategories
+
+[33mcommit e8e9d0cc89d8e7d49951f07014111cd9a6122c54[m
+Merge: 2895dae c4866b1
+Author: Yi Hao <yihaochai07@gmail.com>
+Date:   Wed Apr 29 15:51:19 2026 +0800
+
+    resolve merge conflict
+
+[33mcommit 2895daefce37b9ae7245557606e79ff15d49200c[m
+Author: Yi Hao <yihaochai07@gmail.com>
+Date:   Wed Apr 29 15:24:34 2026 +0800
+
+    change some code inside hooks.
+
+[33mcommit c4866b1fc8619def86c876e3b6b95b3539680a5f[m
+Author: yihaochai07-arch <yihaochai07@gmail.com>
+Date:   Mon Apr 27 15:54:16 2026 +0800
+
+    Delete README.md
+
+[33mcommit 15d71cbedd2199dab4555b963b5e4c9d87cd8cdc[m
+Author: Yi Hao <yihaochai07@gmail.com>
+Date:   Mon Apr 27 15:23:58 2026 +0800
+
+    initialise repository.
