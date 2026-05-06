@@ -7,12 +7,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type Account = {
   id: string;
-  user_id: string
-  name: string
+  user_id: string;
+  name: string;
   platform_type: 'cash' | 'bank' | 'ewallet_tng' | 'ewallet_grabpay';
-  opening_balance: number
-  created_at: string
-}
+  opening_balance: number;
+  created_at: string;
+};
 
 export const getAccountsByUser = async (userId: string) => {
   const { data, error } = await supabase
@@ -22,4 +22,4 @@ export const getAccountsByUser = async (userId: string) => {
 
   if (error) throw error;
   return data;
-}
+};
