@@ -4,12 +4,15 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import AppShell from './components/AppShell';
 import Dashboard from './pages/Dashboard';
 import Accounts from './pages/Accounts';
 import Transactions from './pages/Transactions';
 import Goals from './pages/Goals';
 import Reports from './pages/Reports';
+
 
 function App() {
   return (
@@ -19,7 +22,8 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/app" element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="accounts" element={<Accounts />} />
