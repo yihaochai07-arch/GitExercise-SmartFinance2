@@ -70,6 +70,19 @@ export default function Login() {
             </button>
           </form>
 
+              {/* Forgot Password Link */}
+          <div className="mt-4 text-center">
+            <Link
+              to="/forgot-password"
+              className="text-white/30 hover:text-pink-400 text-sm transition-colors"
+            >
+              Forgot password?{' '}
+              <span className="text-pink-400 hover:text-pink-300 font-medium">
+                Reset
+              </span>
+            </Link>
+          </div>      
+                     
           <div className="mt-6 pt-5 border-t border-white/[0.06]">
             <p className="text-center text-white/30 text-sm">
               Don't have an account?{' '}
