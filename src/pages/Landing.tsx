@@ -406,7 +406,7 @@ export default function Landing() {
               <div className="flex flex-col gap-6 max-w-3xl">
                 <div className="flex gap-3 items-center scroll-item scroll-fade-up" style={{ animationPlayState: 'running' }}>
                   <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-pink-500/10 text-[11px] font-mono font-medium text-pink-400 border border-pink-500/20 shadow-[0_0_10px_rgba(236,72,153,0.2)]">01</span>
-                  <span className="text-sm font-medium tracking-widest uppercase text-gray-500">Intelligence</span>
+                  <span className="text-sm font-medium tracking-widest uppercase text-gray-500">CORE FEATURES</span>
                 </div>
                 <h2
                   className="text-4xl md:text-5xl lg:text-6xl text-white leading-[1.1] tracking-tight scroll-item scroll-fade-up delay-100 font-medium"
