@@ -63,9 +63,44 @@ export default function Landing() {
 
     if (container) dashboardObserver.observe(container);
 
+    // Animate feature card visuals on scroll
+    const animateCard = (el: Element) => {
+      el.querySelectorAll<HTMLElement>('[data-bar-width]').forEach((bar, i) => {
+        const target = bar.getAttribute('data-bar-width') ?? '0%';
+        bar.style.width = '0';
+        setTimeout(() => { bar.style.width = target; }, 100 + i * 200);
+      });
+
+      el.querySelectorAll<HTMLElement>('[data-liquid-height]').forEach(liquid => {
+        const target = liquid.getAttribute('data-liquid-height') ?? '0%';
+        liquid.style.height = '0';
+        setTimeout(() => { liquid.style.height = target; }, 400);
+      });
+
+      el.querySelectorAll<HTMLElement>('[data-pop-in]').forEach((popEl, i) => {
+        popEl.style.opacity = '0';
+        popEl.style.transform = 'scale(0.8) translateY(10px)';
+        setTimeout(() => {
+          popEl.style.opacity = '1';
+          popEl.style.transform = 'scale(1) translateY(0px)';
+        }, 200 + i * 180);
+      });
+    };
+
+    const featureObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        animateCard(entry.target);
+        featureObserver.unobserve(entry.target);
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.feature-card').forEach(el => featureObserver.observe(el));
+
     return () => {
       scrollObserver.disconnect();
       dashboardObserver.disconnect();
+      featureObserver.disconnect();
       if (counterInterval) clearInterval(counterInterval);
     };
   }, []);
@@ -101,7 +136,7 @@ export default function Landing() {
           className="md:text-7xl leading-[1.1] scroll-item scroll-blur-in delay-100 text-5xl font-medium tracking-tight text-center max-w-4xl mx-auto"
           style={{ animationPlayState: 'running' }}
         >
-          Master Finance. <span className="text-pink-500 tracking-tight font-medium">Simply.</span>
+         Master Finance. <span className="text-pink-500 tracking-tight font-medium">Simply.</span>
         </h1>
 
         {/* Subheadline */}
@@ -122,7 +157,7 @@ export default function Landing() {
             className="group inline-flex overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_40px_-10px_rgba(236,72,153,0.5)] sm:w-auto text-sm font-medium text-white w-full h-[54px] rounded-full pt-4 pr-8 pb-4 pl-8 relative items-center justify-center landing-cta-btn"
           >
             <div className="absolute inset-0 -z-20 rounded-full overflow-hidden p-[1px]">
-              <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,transparent_0_300deg,#ec4899_360deg)] landing-beam-spin"></div>
+              <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,transparent_0_300deg,#0ea5e9_360deg)] landing-beam-spin"></div>
               <div className="absolute inset-[1px] rounded-full bg-[#050505]"></div>
             </div>
             <div className="overflow-hidden bg-[#0A0A0A] rounded-full absolute top-[2px] right-[2px] bottom-[2px] left-[2px]">
@@ -333,10 +368,10 @@ export default function Landing() {
                       </div>
                       <div className="flex justify-around items-end h-full pl-2 pb-8 relative z-10 w-full">
                         {[
-                          { label: 'Install', height: '75%', color: 'from-[#be185d] to-[#be185d]/10', delay: '0.1s' },
-                          { label: 'Open',    height: '60%', color: 'from-[#db2777] to-[#db2777]/10', delay: '0.2s' },
-                          { label: 'Sign Up', height: '60%', color: 'from-[#ec4899] to-[#ec4899]/10', delay: '0.3s' },
-                          { label: 'Active',  height: '80%', color: 'from-[#f472b6] to-[#f472b6]/10', delay: '0.4s' },
+                          { label: 'Install', height: '75%', color: 'from-[#0891b2] to-[#0891b2]/10', delay: '0.1s' },
+                          { label: 'Open',    height: '60%', color: 'from-[#0ea5e9] to-[#0ea5e9]/10', delay: '0.2s' },
+                          { label: 'Sign Up', height: '60%', color: 'from-[#38bdf8] to-[#38bdf8]/10', delay: '0.3s' },
+                          { label: 'Active',  height: '80%', color: 'from-[#7dd3fc] to-[#7dd3fc]/10', delay: '0.4s' },
                         ].map(({ label, height, color, delay }) => (
                           <div key={label} className="flex flex-col items-center gap-3 w-16 group cursor-pointer relative h-full justify-end">
                             <div
@@ -399,7 +434,7 @@ export default function Landing() {
           <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#050505] to-transparent z-0 pointer-events-none"></div>
         </div>
 
-        {/* Intelligence Section */}
+        {/* Core Features Section */}
         <section className="z-10 w-full max-w-7xl mt-32 mx-auto mb-24 relative space-y-20">
           <div className="flex flex-col bg-[#0A0A0C] border-[#ffffff]/10 border rounded-3xl mt-24 mb-24 pt-8 pr-8 pb-16 pl-8 gap-x-16 gap-y-16">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 w-full">
@@ -412,260 +447,307 @@ export default function Landing() {
                   className="text-4xl md:text-5xl lg:text-6xl text-white leading-[1.1] tracking-tight scroll-item scroll-fade-up delay-100 font-medium"
                   style={{ animationPlayState: 'running' }}
                 >
-                  Predictive Analytics <span className="text-gray-600 tracking-tight font-medium">for Modern Growth</span>
+                  Smart Financial Tools <span className="text-gray-600 tracking-tight font-medium">for Better Money Management</span>
                 </h2>
                 <p
                   className="leading-relaxed text-lg font-light text-gray-400 max-w-xl scroll-item scroll-fade-up delay-200"
                   style={{ animationPlayState: 'running' }}
                 >
-                  Leverage AI-driven insights to forecast trends, optimize spending, and maximize returns across all your financial channels with precision.
+                  Track balances, monitor budgets, analyze spending, and achieve your financial goals with SmartFinance.
                 </p>
               </div>
-              <button
+              <Link
+                to="/register"
                 className="group flex items-center gap-2 pl-6 pr-5 py-3 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-200 transition-all duration-200 whitespace-nowrap scroll-item scroll-fade-up delay-300"
                 style={{ animationPlayState: 'running' }}
               >
-                <span>Explore Features</span>
+                Explore Features
                 <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-              </button>
+              </Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 lg:auto-rows-[400px] gap-6" id="dashboard-grid">
-              {/* ROI Prediction */}
+              {/* Budget Monitoring */}
               <div
-                className="relative h-[400px] rounded-[2rem] bg-[#0A0A0C] border border-white/10 p-8 overflow-hidden flex flex-col justify-between group hover:border-white/[0.15] transition-colors scroll-item scroll-fade-up delay-100"
+                className="feature-card relative h-[400px] rounded-[2rem] bg-[#0A0A0C] border border-white/10 p-8 overflow-hidden flex flex-col justify-between group hover:border-white/[0.15] transition-colors scroll-item scroll-fade-up delay-100"
                 style={{ animationPlayState: 'running' }}
               >
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1a1a2e] via-[#0A0A0C] to-[#0A0A0C]"></div>
                 <div className="pointer-events-none absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
                 <div className="relative z-10">
-                  <h3 className="text-4xl text-white tracking-tight font-medium">ROI Prediction</h3>
-                  <p className="mt-2 text-lg font-light leading-relaxed text-gray-400">Predict recurring bills and upcoming expenses accurately.</p>
+                  <h3 className="text-4xl text-white tracking-tight font-medium">Budget Monitoring</h3>
+                  <p className="mt-2 text-lg font-light leading-relaxed text-gray-400">Track spending limits and receive real-time budget alerts.</p>
                 </div>
-                <div className="relative z-10 h-32 w-full">
-                  <svg className="w-full h-full overflow-visible" viewBox="0 0 100 50" preserveAspectRatio="none">
-                    <path d="M0 45 L100 45" stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="4 4"></path>
-                    <path d="M0 25 L100 25" stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="4 4"></path>
-                    <defs>
-                      <linearGradient id="gradient-area" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style={{ stopColor: '#ec4899', stopOpacity: 0.2 }}></stop>
-                        <stop offset="100%" style={{ stopColor: '#ec4899', stopOpacity: 0 }}></stop>
-                      </linearGradient>
-                    </defs>
-                    <path d="M0 40 C 20 40, 30 35, 50 20 C 70 5, 80 10, 100 0 V 50 H 0 Z" fill="url(#gradient-area)"></path>
-                    <path d="M0 40 C 20 40, 30 35, 50 20 C 70 5, 80 10, 100 0" fill="none" stroke="#ec4899" strokeWidth="2"></path>
-                    <foreignObject x="60" y="-10" width="40" height="25">
-                      <div className="px-2 py-1 rounded bg-pink-500 text-white text-[10px] text-center shadow-[0_0_10px_rgba(236,72,153,0.5)] font-semibold">
-                        <span data-counter-target="24" data-counter-prefix="+">+0</span>%
-                      </div>
-                    </foreignObject>
-                  </svg>
-                </div>
+                {/* Budget Monitoring Visual */}
+<div className="relative z-10 w-full mt-auto space-y-4">
+  {/* Percentage label */}
+  <div className="flex justify-between items-center">
+    <span className="text-sm font-medium text-white/60">Monthly Budget</span>
+    <span className="text-sm font-bold text-pink-400">75% Used</span>
+  </div>
+
+  {/* Capsule progress bar */}
+  <div className="w-full h-4 bg-white/10 rounded-full overflow-hidden">
+    <div
+      className="h-full rounded-full bg-gradient-to-r from-pink-600 via-pink-500 to-purple-500 shadow-[0_0_12px_rgba(236,72,153,0.6)] animate-glow-breathe"
+      data-bar-width="75%"
+    />
+  </div>
+
+  {/* Amount labels */}
+  <div className="flex justify-between items-center">
+    <span className="text-xs text-white/40">RM 1,500 spent</span>
+    <span className="text-xs font-semibold text-white">RM 500 left</span>
+  </div>
+
+  {/* Bottom total */}
+  <div className="pt-2 border-t border-white/10 flex justify-between">
+    <span className="text-xs text-white/30">Total limit</span>
+    <span className="text-xs text-white/60 font-medium">RM 2,000 / month</span>
+  </div>
+</div>
               </div>
 
-              {/* Cashflow */}
+              {/* Wallet Overview */}
               <div
-                className="relative rounded-[2rem] bg-[#0A0A0C] border border-white/10 p-8 overflow-hidden flex flex-col h-[400px] md:h-[400px] lg:h-[824px] lg:row-span-2 group hover:border-white/[0.15] transition-colors scroll-item scroll-fade-up delay-200"
+                className="feature-card relative rounded-[2rem] bg-[#0A0A0C] border border-white/10 p-8 overflow-hidden flex flex-col h-[400px] md:h-[400px] lg:h-[824px] lg:row-span-2 group hover:border-white/[0.15] transition-colors scroll-item scroll-fade-up delay-200"
                 style={{ animationPlayState: 'running' }}
-              >
+>
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1a1a2e] via-[#0A0A0C] to-[#0A0A0C]"></div>
                 <div className="pointer-events-none absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '40px 40px', maskImage: 'radial-gradient(circle, black 40%, transparent 100%)', WebkitMaskImage: 'radial-gradient(circle, black 40%, transparent 100%)' }}></div>
                 <div className="relative z-10">
-                  <h3 className="text-4xl text-white tracking-tight font-medium">Cashflow</h3>
-                  <p className="mt-2 text-lg font-light leading-relaxed text-gray-400 max-w-[26rem]">Income vs outcome trend across the last 6 months.</p>
+                  <h3 className="text-4xl text-white tracking-tight font-medium">Wallet Overview</h3>
+                  <p className="mt-2 text-lg font-light leading-relaxed text-gray-400 max-w-[26rem]">Monitor balances across cash, bank accounts, and e-wallets.</p>
                 </div>
-                <div className="relative z-10 flex-1 flex items-center justify-center pt-6">
-                  <svg viewBox="0 0 300 300" className="w-[320px] h-[320px] md:w-[360px] md:h-[360px] lg:w-[380px] lg:h-[380px] overflow-visible" preserveAspectRatio="xMidYMid meet">
-                    <defs>
-                      <linearGradient id="grad-purple" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#be185d"></stop>
-                        <stop offset="100%" stopColor="#db2777"></stop>
-                      </linearGradient>
-                      <linearGradient id="grad-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#f472b6"></stop>
-                        <stop offset="100%" stopColor="#ec4899"></stop>
-                      </linearGradient>
-                    </defs>
-                    <g fill="none" stroke="#ffffff" strokeOpacity="0.10" strokeWidth="1" strokeDasharray="3 3">
-                      {[22,44,66,88,110].map(r => <circle key={r} cx="150" cy="150" r={r} />)}
-                    </g>
-                    <g stroke="#ffffff" strokeOpacity="0.15" strokeWidth="1">
-                      <line x1="150" y1="150" x2="150" y2="40" />
-                      <line x1="150" y1="150" x2="245" y2="95" />
-                      <line x1="150" y1="150" x2="245" y2="205" />
-                      <line x1="150" y1="150" x2="150" y2="260" />
-                      <line x1="150" y1="150" x2="55" y2="205" />
-                      <line x1="150" y1="150" x2="55" y2="95" />
-                    </g>
-                    <g fill="white" fontSize="11" fontWeight="500" textAnchor="middle" dominantBaseline="middle">
-                      <text x="150" y="25">Jan</text>
-                      <text x="268" y="85">Feb</text>
-                      <text x="268" y="215">Mar</text>
-                      <text x="150" y="278">Apr</text>
-                      <text x="32" y="215">May</text>
-                      <text x="32" y="85">Jun</text>
-                    </g>
-                    <path d="M150 62 L197 122 L188 172 L150 249 L102 177 L74 106 Z" fill="none" stroke="url(#grad-purple)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"></path>
-                    <path d="M150 95 L240 102 L230 196 L150 254 L80 190 L107 125 Z" fill="none" stroke="url(#grad-cyan)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"></path>
-                  </svg>
-                </div>
+                {/* Wallet Overview Visual */}
+<div className="relative z-10 flex-1 flex flex-col justify-center gap-3 pt-4">
+  {[
+    { name: 'Maybank', type: 'Bank', amount: 'RM 3,200', pct: '79%', color: 'from-yellow-500 to-orange-500', icon: '🏦' },
+    { name: 'GrabPay', type: 'E-Wallet', amount: 'RM 450', pct: '45%', color: 'from-green-500 to-emerald-400', icon: '🟢' },
+    { name: "Touch 'n Go", type: 'E-Wallet', amount: 'RM 230', pct: '25%', color: 'from-blue-500 to-cyan-400', icon: '💙' },
+    { name: 'Cash', type: 'Physical', amount: 'RM 180', pct: '18%', color: 'from-pink-500 to-rose-400', icon: '💵' },
+  ].map(({ name, type, amount, pct, color, icon }) => (
+    <div key={name} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/10 transition-colors">
+      {/* Icon */}
+      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-sm shrink-0">
+        {icon}
+      </div>
+      {/* Name + bar */}
+      <div className="flex-1 min-w-0">
+        <div className="flex justify-between mb-1">
+          <span className="text-xs font-medium text-white">{name}</span>
+          <span className="text-xs font-semibold text-white/80">{amount}</span>
+        </div>
+        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+          <div className={`h-full rounded-full bg-gradient-to-r ${color}`} data-bar-width={pct} />
+        </div>
+      </div>
+    </div>
+  ))}
+
+  {/* Total row */}
+  <div className="mt-2 pt-3 border-t border-white/10 flex justify-between items-center">
+    <span className="text-xs text-white/40">Total Balance</span>
+    <span className="text-sm font-bold text-white">RM 4,060</span>
+  </div>
+</div>
               </div>
 
-              {/* Engagement Forecasting */}
+              {/* Goal Tracking */}
               <div
-                className="relative h-[400px] rounded-[2rem] bg-[#0A0A0C] border border-white/10 p-8 overflow-hidden flex flex-col group hover:border-white/[0.15] transition-colors scroll-item scroll-fade-up delay-300"
+                className="feature-card relative h-[400px] rounded-[2rem] bg-[#0A0A0C] border border-white/10 p-8 overflow-hidden flex flex-col group hover:border-white/[0.15] transition-colors scroll-item scroll-fade-up delay-300"
                 style={{ animationPlayState: 'running' }}
               >
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1a1a2e] via-[#0A0A0C] to-[#0A0A0C]"></div>
                 <div className="pointer-events-none absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
                 <div className="relative z-10">
-                  <h3 className="text-4xl text-white tracking-tight font-medium">Engagement Forecasting</h3>
-                  <p className="mt-2 text-lg font-light leading-relaxed text-gray-400">Predict engagement rates for upcoming campaigns.</p>
+                  <h3 className="text-4xl text-white tracking-tight font-medium">Goal Tracking</h3>
+                  <p className="mt-2 text-lg font-light leading-relaxed text-gray-400">Set savings goals and track your financial progress in real time.</p>
                 </div>
-                <div className="relative z-10 flex-1 flex items-center justify-center">
-                  <div className="absolute w-32 h-32 rounded-3xl bg-white/[0.03] border border-white/[0.05] animate-spin" style={{ animationDuration: '25s' }}></div>
-                  <div className="absolute w-24 h-24 rounded-2xl bg-white/[0.05] border border-white/[0.05] animate-spin" style={{ animationDuration: '15s', animationDirection: 'reverse' }}></div>
-                  <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-pink-600 to-pink-400 flex items-center justify-center shadow-[0_12px_30px_-10px_rgba(236,72,153,0.4)] relative z-10">
-                    <span className="text-4xl text-white font-medium tracking-tight flex items-baseline">
-                      <span data-counter-target="45" data-counter-suffix="k">0k</span>
-                    </span>
-                  </div>
-                </div>
+                {/* Goal Tracking Visual */}
+<div className="relative z-10 flex-1 flex flex-col items-center justify-center gap-4">
+  {/* Jar illustration using divs */}
+  <div className="relative w-28 h-32">
+    {/* Jar lid */}
+    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-4 bg-gradient-to-r from-pink-600 to-purple-600 rounded-t-full" />
+    {/* Jar body */}
+    <div className="absolute inset-0 rounded-b-3xl rounded-t-xl border-2 border-white/20 overflow-hidden bg-white/[0.03]">
+      {/* Liquid fill — 60% from bottom */}
+      <div
+        className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-pink-600 via-pink-500 to-purple-500 opacity-80"
+        data-liquid-height="60%"
+      >
+        {/* Wave effect on top of liquid */}
+        <div className="absolute -top-2 left-0 right-0 h-4 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full opacity-60 animate-pulse" />
+      </div>
+      {/* Percentage text inside jar */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-2xl font-bold text-white drop-shadow-lg">60%</span>
+      </div>
+    </div>
+    {/* Jar shine */}
+    <div className="absolute top-4 left-3 w-2 h-8 bg-white/10 rounded-full" />
+  </div>
+
+  {/* Labels */}
+  <div className="text-center space-y-1">
+    <p className="text-xs text-white/40">Savings Goal — New Car</p>
+    <p className="text-sm font-semibold text-white">RM 27,000 <span className="text-white/30 font-normal">/ RM 45,000</span></p>
+    {/* Mini progress bar */}
+    <div className="w-32 h-1.5 bg-white/10 rounded-full overflow-hidden mx-auto mt-2">
+      <div className="h-full w-[60%] bg-gradient-to-r from-pink-500 to-purple-500 rounded-full" />
+    </div>
+  </div>
+</div>
               </div>
 
-              {/* Conversion Probability */}
+              {/* Spending Insights */}
               <div
-                className="relative h-[400px] rounded-[2rem] bg-[#0A0A0C] border border-white/10 p-8 overflow-hidden flex flex-col justify-end group hover:border-white/[0.15] transition-colors scroll-item scroll-fade-up delay-500"
+                className="feature-card relative h-[400px] rounded-[2rem] bg-[#0A0A0C] border border-white/10 p-8 overflow-hidden flex flex-col justify-end group hover:border-white/[0.15] transition-colors scroll-item scroll-fade-up delay-500"
                 style={{ animationPlayState: 'running' }}
               >
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1a1a2e] via-[#0A0A0C] to-[#0A0A0C]"></div>
                 <div className="pointer-events-none absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-                <div className="absolute inset-0 flex items-center justify-center -translate-y-10 z-10">
-                  <div className="relative">
-                    <span className="text-[8rem] text-white/10 select-none font-medium tracking-tight flex">
-                      <span data-counter-target="20" data-counter-suffix="%">0%</span>
-                    </span>
-                    <div className="absolute top-1/2 left-0 h-[4px] bg-gradient-to-r from-pink-600 to-pink-400 shadow-[0_0_18px_rgba(236,72,153,0.6)] w-full"></div>
-                  </div>
-                </div>
+                {/* Spending Insights Visual */}
+<div className="absolute inset-0 flex flex-col justify-center px-8 z-10 pb-28">
+  <div className="space-y-3">
+    {[
+      { label: 'Food', amount: 'RM 892', pct: '85%', color: 'from-pink-500 to-rose-500', trend: '+5%', up: true },
+      { label: 'Transport', amount: 'RM 345', pct: '55%', color: 'from-purple-500 to-pink-500', trend: '-2%', up: false },
+      { label: 'Shopping', amount: 'RM 280', pct: '40%', color: 'from-blue-500 to-purple-500', trend: '+8%', up: true },
+      { label: 'Education', amount: 'RM 150', pct: '25%', color: 'from-teal-500 to-blue-500', trend: '0%', up: false },
+    ].map(({ label, amount, pct, color, trend, up }) => (
+      <div key={label} className="group relative">
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-white/50 w-16 shrink-0">{label}</span>
+          <div className="flex-1 h-2.5 bg-white/5 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full bg-gradient-to-r ${color}`}
+              data-bar-width={pct}
+            />
+          </div>
+          <span className="text-xs font-medium text-white/70 w-16 text-right">{amount}</span>
+          {/* Trend badge */}
+          <span className={`text-[10px] font-semibold w-8 text-right ${up ? 'text-green-400' : 'text-red-400'}`}>
+            {trend}
+          </span>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
                 <div className="relative z-10">
-                  <h3 className="text-4xl text-white tracking-tight font-medium">Conversion Probability</h3>
-                  <p className="mt-2 text-lg font-light leading-relaxed text-gray-400">Estimate the likelihood of conversions based on data.</p>
+                  <h3 className="text-4xl text-white tracking-tight font-medium">Spending Insights</h3>
+                  <p className="mt-2 text-lg font-light leading-relaxed text-gray-400">Analyze spending patterns and identify where your money goes.</p>
                 </div>
               </div>
 
-              {/* Channel Performance */}
-              <div className="relative h-[400px] rounded-[2rem] bg-[#0A0A0C] border border-white/10 p-8 overflow-hidden flex flex-col justify-end group hover:border-white/[0.15] transition-colors">
+              {/* Data Portability */}
+              <div className="feature-card relative h-[400px] rounded-[2rem] bg-[#0A0A0C] border border-white/10 p-8 overflow-hidden flex flex-col justify-end group hover:border-white/[0.15] transition-colors">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1a1a2e] via-[#0A0A0C] to-[#0A0A0C]"></div>
                 <div className="pointer-events-none absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(white 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-                <div className="relative z-10 mb-10 flex flex-col gap-6">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xl text-white tracking-tight font-medium">Top Assets</h4>
-                    <button className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 pl-4 pr-3 py-1.5 text-xs font-medium text-gray-300 transition-colors hover:bg-white/10 hover:text-white">
-                      All Projects <ChevronRight size={14} className="opacity-70" />
-                    </button>
-                  </div>
-                  <div className="flex flex-col gap-5">
-                    {[
-                      { label: 'AAPL', pct: '80%', color: 'bg-[#d946ef]', val: '$800' },
-                      { label: 'TSLA', pct: '90%', color: 'bg-[#f472b6]', val: '$85K' },
-                      { label: 'BTC',  pct: '85%', color: 'bg-[#f87171]', val: '$42K' },
-                      { label: 'NVDA', pct: '60%', color: 'bg-[#ec4899]', val: '120' },
-                    ].map(({ label, pct, color, val }) => (
-                      <div key={label} className="flex items-center gap-4">
-                        <span className="w-[110px] shrink-0 text-sm text-gray-300 font-medium truncate">{label}</span>
-                        <div className="h-3 flex-1 rounded-full bg-white/5 overflow-hidden">
-                          <div className={`h-full rounded-full ${color}`} style={{ width: pct }}></div>
-                        </div>
-                        <span className="w-12 shrink-0 text-right text-sm text-white font-medium">{val}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                {/* Data Portability Visual */}
+                <div className="relative z-10 mb-10 flex flex-col items-center gap-5">
+  {/* Cloud background icon */}
+  <div className="absolute -top-4 right-4 opacity-5 text-[80px] select-none pointer-events-none">☁</div>
+
+  {/* File icons row */}
+  <div className="flex gap-4 mt-2">
+    {/* CSV Card */}
+    <div data-pop-in className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-gradient-to-b from-green-500/10 to-transparent border border-green-500/20 hover:border-green-500/40 transition-all hover:scale-105 cursor-pointer group w-24">
+      <div className="w-10 h-12 rounded-lg bg-gradient-to-b from-green-500 to-emerald-600 flex items-center justify-center shadow-[0_4px_15px_rgba(34,197,94,0.3)] group-hover:shadow-[0_4px_20px_rgba(34,197,94,0.5)] transition-all relative">
+        <span className="text-white text-[10px] font-black">.CSV</span>
+        {/* Folded corner */}
+        <div className="absolute top-0 right-0 w-3 h-3 bg-emerald-800/50 rounded-bl-md" />
+      </div>
+      <span className="text-[10px] text-white/40 font-medium">Spreadsheet</span>
+    </div>
+
+    {/* PDF Card */}
+    <div data-pop-in className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-gradient-to-b from-red-500/10 to-transparent border border-red-500/20 hover:border-red-500/40 transition-all hover:scale-105 cursor-pointer group w-24">
+      <div className="w-10 h-12 rounded-lg bg-gradient-to-b from-red-500 to-rose-600 flex items-center justify-center shadow-[0_4px_15px_rgba(239,68,68,0.3)] group-hover:shadow-[0_4px_20px_rgba(239,68,68,0.5)] transition-all relative">
+        <span className="text-white text-[10px] font-black">.PDF</span>
+        <div className="absolute top-0 right-0 w-3 h-3 bg-rose-800/50 rounded-bl-md" />
+      </div>
+      <span className="text-[10px] text-white/40 font-medium">Report</span>
+    </div>
+  </div>
+
+  {/* Cloud sync status */}
+  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/10">
+    <div className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse" />
+    <span className="text-[10px] text-white/40 font-medium">Cloud synced & ready to export</span>
+  </div>
+
+  {/* Download button */}
+  <button data-pop-in className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white text-xs font-semibold transition-all hover:scale-[1.02] animate-btn-pulse">
+    ⬇ Download Now
+  </button>
+</div>
                 <div className="relative z-10">
-                  <h3 className="text-4xl text-white tracking-tight font-medium">Channel Performance</h3>
-                  <p className="mt-2 text-lg font-light leading-relaxed text-gray-400">Analyze and predict channel-specific effectiveness.</p>
+                  <h3 className="text-4xl text-white tracking-tight font-medium">Data Portability</h3>
+                  <p className="mt-2 text-lg font-light leading-relaxed text-gray-400">Export financial records into CSV or PDF formats for further analysis.</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Web Platform Section */}
-          <div className="flex flex-col bg-[#0A0A0C] border-[#ffffff]/10 border rounded-3xl mt-24 mb-24 pt-8 pr-8 pb-16 pl-8 gap-x-16 gap-y-16">
-            <div className="flex flex-col overflow-hidden lg:flex-row lg:gap-24 mt-12 pt-10 pr-10 pb-10 pl-10 relative gap-x-16 gap-y-16 items-center justify-between">
-              {/* Web Mockup */}
-              <div className="z-10 shrink-0 w-full lg:w-[500px] relative order-2 lg:order-1">
-                <div className="flex flex-col w-full h-[450px] bg-[#050505] border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative mx-auto">
-                  <div className="flex bg-[#0A0A0A] w-full h-10 border-b border-white/5 px-4 items-center gap-2 shrink-0">
-                    <div className="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
-                    <div className="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
-                    <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
-                  </div>
-                  <div className="flex flex-1 p-4 gap-4">
-                    <div className="hidden md:flex w-32 bg-white/[0.02] border border-white/5 rounded-xl p-3 flex-col gap-3">
-                      <div className="w-full h-4 bg-white/10 rounded mb-2"></div>
-                      <div className="w-3/4 h-3 bg-white/5 rounded"></div>
-                      <div className="w-full h-3 bg-white/5 rounded"></div>
-                      <div className="w-5/6 h-3 bg-white/5 rounded"></div>
-                      <div className="w-4/5 h-3 bg-white/5 rounded"></div>
-                    </div>
-                    <div className="flex-1 flex flex-col gap-4">
-                      <div className="flex gap-4">
-                        <div className="flex-1 h-20 bg-gradient-to-br from-pink-500/10 to-transparent border border-pink-500/20 rounded-xl p-3 flex flex-col justify-center relative overflow-hidden">
-                          <div className="absolute right-0 top-0 w-16 h-16 bg-pink-500/20 blur-xl rounded-full"></div>
-                          <div className="w-10 h-3 bg-white/10 rounded mb-2"></div>
-                          <div className="w-16 h-5 bg-white/30 rounded"></div>
-                        </div>
-                        <div className="flex-1 h-20 bg-white/[0.02] border border-white/5 rounded-xl p-3 flex flex-col justify-center">
-                          <div className="w-10 h-3 bg-white/10 rounded mb-2"></div>
-                          <div className="w-16 h-5 bg-white/20 rounded"></div>
-                        </div>
-                      </div>
-                      <div className="flex-1 bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col justify-end">
-                        <div className="flex items-end justify-between h-full gap-2 pt-4">
-                          {[30,50,80,40,60,70,100].map((h, i) => (
-                            <div
-                              key={i}
-                              className={`w-full rounded-t-sm transition-colors ${h === 100 ? 'bg-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.5)]' : h === 80 ? 'bg-pink-500/40 hover:bg-pink-500/60' : 'bg-white/5 hover:bg-white/10'}`}
-                              style={{ height: `${h}%` }}
-                            ></div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          {/* Quote Section */}
+          <div className="flex flex-col bg-[#0A0A0C] border border-white/10 rounded-3xl mt-24 mb-24 overflow-hidden scroll-item scroll-fade-up" style={{ animationPlayState: 'running' }}>
+            <div className="flex flex-col lg:flex-row items-stretch min-h-[480px]">
+              {/* Image side */}
+              <div className="relative lg:w-[420px] shrink-0 overflow-hidden bg-black">
+                <img
+                  src="/robert-kiyosaki-rich-dad-poor-dad-wealth-cashflow-101-author-robert-kiyosaki-1fa5ed5677a8a759eb100e33b295b3ff.png"
+                  alt="Robert Kiyosaki"
+                  className="w-full h-full object-cover object-top grayscale hover:grayscale-0 transition-all duration-700 ease-in-out lg:min-h-[480px]"
+                  style={{ maxHeight: '560px' }}
+                />
+                {/* Bottom fade into card bg */}
+                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0A0A0C] to-transparent pointer-events-none lg:hidden" />
+                <div className="absolute top-0 right-0 bottom-0 w-24 bg-gradient-to-l from-[#0A0A0C] to-transparent pointer-events-none hidden lg:block" />
               </div>
 
-              {/* Text Content */}
-              <div className="flex flex-col w-full gap-8 items-start justify-center z-10 order-1 lg:order-2">
-                <div className="flex flex-col gap-6 max-w-xl">
+              {/* Quote side */}
+              <div className="flex flex-col justify-center px-10 py-14 lg:px-16 lg:py-20 flex-1 relative">
+                {/* Decorative quote mark */}
+                <div className="absolute top-8 left-10 lg:left-14 text-[120px] leading-none text-white/[0.04] font-serif select-none pointer-events-none">"</div>
+
+                <div className="relative z-10 flex flex-col gap-8">
+                  {/* Label */}
                   <div className="flex gap-3 items-center scroll-item scroll-fade-up" style={{ animationPlayState: 'running' }}>
-                    <span className="flex items-center justify-center text-[11px] font-medium text-pink-400 font-mono bg-pink-500/10 w-7 h-7 border-pink-500/20 border rounded-lg shadow-[0_0_10px_rgba(236,72,153,0.2)]">02</span>
-                    <span className="uppercase text-sm font-medium text-gray-500 tracking-widest">Web Platform</span>
+                    <span className="flex items-center justify-center text-[11px] font-medium text-pink-400 font-mono bg-pink-500/10 w-7 h-7 border border-amber-500/20 rounded-lg">02</span>
+                    <span className="uppercase text-sm font-medium text-gray-500 tracking-widest">Words of Wisdom</span>
                   </div>
-                  <h2
-                    className="md:text-5xl lg:text-6xl leading-[1.1] text-4xl text-white tracking-tight scroll-item scroll-fade-up delay-100 font-medium"
+
+                  {/* Quote text */}
+                  <blockquote
+                    className="text-2xl md:text-3xl lg:text-4xl text-white font-medium leading-[1.3] tracking-tight scroll-item scroll-fade-up delay-100"
                     style={{ animationPlayState: 'running' }}
                   >
-                    Complete control.
-                    <span className="text-gray-600 tracking-tight font-medium block mt-2">From any browser.</span>
-                  </h2>
-                  <p
-                    className="leading-relaxed text-lg font-light text-gray-400 mt-2 scroll-item scroll-fade-up delay-200"
+                    "It's not how much money you make.{' '}
+                    <span className="text-amber-400">It's how much money you keep.</span>"
+                  </blockquote>
+
+                  {/* Attribution */}
+                  <div className="flex items-center gap-4 scroll-item scroll-fade-up delay-200" style={{ animationPlayState: 'running' }}>
+                    <div className="h-px w-10 bg-white/20" />
+                    <div>
+                      <p className="text-white font-semibold text-sm tracking-wide">Robert Kiyosaki</p>
+                      <p className="text-gray-500 text-xs mt-0.5">Author of Rich Dad Poor Dad</p>
+                    </div>
+                  </div>
+
+                  {/* CTA */}
+                  <Link
+                    to="/register"
+                    className="group flex items-center gap-2 pl-6 pr-5 py-3 mt-2 bg-white text-black rounded-full text-sm font-semibold hover:bg-gray-200 transition-all duration-200 w-fit scroll-item scroll-fade-up delay-300"
                     style={{ animationPlayState: 'running' }}
                   >
-                    Experience the full power of personal finance management on the web. Gain deep insights, manage budgets, track your net worth, and generate custom reports with our comprehensive desktop experience.
-                  </p>
+                    <span>Start Building Wealth</span>
+                    <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                  </Link>
                 </div>
-                <Link
-                  to="/register"
-                  className="group flex items-center gap-2 pl-6 pr-5 py-3 mt-4 bg-white text-black rounded-full text-sm font-semibold hover:bg-gray-200 transition-all duration-200 whitespace-nowrap scroll-item scroll-fade-up delay-300"
-                  style={{ animationPlayState: 'running' }}
-                >
-                  <span>Get Started Free</span>
-                  <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-                </Link>
               </div>
             </div>
           </div>
