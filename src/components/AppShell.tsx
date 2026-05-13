@@ -24,6 +24,22 @@ export default function AppShell() {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const isHub = location.pathname === '/app/dashboard';
+  if (isHub) {
+  return (
+    <div className="min-h-screen bg-[#050505]">
+      {/* Mobile header still useful if user navigates to hub on mobile */}
+      <header className="lg:hidden bg-[#0a0a0a] border-b border-white/[0.06] px-5 py-4 flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <img src="/SmartFinance_LOGO_1.png" alt="SmartFinance" className="w-6 h-6 object-contain" />
+          <span className="text-sm font-semibold text-white">SmartFinance</span>
+        </div>
+      </header>
+      <Outlet />
+    </div>
+  );
+}
+
   return (
     <div className="flex h-screen bg-[#050505]">
       {sidebarOpen && (
