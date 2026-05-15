@@ -49,7 +49,7 @@ export default function AppShell() {
       <aside className={`fixed lg:relative w-64 h-screen flex flex-col transition-transform z-50 lg:z-0 border-r border-white/[0.06] bg-[#0a0a0a] ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         {/* Logo */}
         <div className="px-6 py-6 border-b border-white/[0.06]">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/app/dashboard')}>
             <img src="/SmartFinance_LOGO_1.png" alt="SmartFinance" className="w-8 h-8 object-contain" />
             <span className="text-lg font-semibold text-white tracking-tight">SmartFinance</span>
           </div>
