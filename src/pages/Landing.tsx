@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  BarChart2, Briefcase, Plane, Tv, Coffee, TrendingUp, PieChart,
+  Briefcase, Plane, Tv, Coffee, TrendingUp, PieChart,
   LayoutDashboard, PlayCircle, Wallet, Users, ArrowRight, Download,
-  PlusSquare, Link2, ChevronDown, ChevronRight, LogOut
+  PlusSquare, Link2, ChevronDown
 } from 'lucide-react';
 import LandingBackground from '../components/LandingBackground';
 
@@ -526,7 +526,7 @@ export default function Landing() {
     { name: 'GrabPay', type: 'E-Wallet', amount: 'RM 450', pct: '45%', color: 'from-green-500 to-emerald-400', icon: '🟢' },
     { name: "Touch 'n Go", type: 'E-Wallet', amount: 'RM 230', pct: '25%', color: 'from-blue-500 to-cyan-400', icon: '💙' },
     { name: 'Cash', type: 'Physical', amount: 'RM 180', pct: '18%', color: 'from-pink-500 to-rose-400', icon: '💵' },
-  ].map(({ name, type, amount, pct, color, icon }) => (
+  ].map(({ name, type ,amount, pct, color, icon }) => (
     <div key={name} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/10 transition-colors">
       {/* Icon */}
       <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-sm shrink-0">
@@ -536,8 +536,9 @@ export default function Landing() {
       <div className="flex-1 min-w-0">
         <div className="flex justify-between mb-1">
           <span className="text-xs font-medium text-white">{name}</span>
-          <span className="text-xs font-semibold text-white/80">{amount}</span>
+          <span className="text-[10px] text-white/30">{type}</span>
         </div>
+        <span className="text-xs font-semibold text-white/80">{amount}</span>
         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
           <div className={`h-full rounded-full bg-gradient-to-r ${color}`} data-bar-width={pct} />
         </div>
