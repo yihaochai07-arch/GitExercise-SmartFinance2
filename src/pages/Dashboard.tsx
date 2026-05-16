@@ -27,6 +27,7 @@ const features = [
     accentIcon: TrendingUp,
     label: 'Transactions',
     description: 'Track every income and expense across all your accounts.',
+    bgImage:'/public/dashboard image/trancaction',
     gradient: 'from-purple-500/10 to-pink-500/5',
     border: 'border-purple-500/20',
     hoverBorder: 'hover:border-purple-500/50',
