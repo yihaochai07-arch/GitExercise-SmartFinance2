@@ -13,6 +13,7 @@ const features = [
     accentIcon: CreditCard,
     label: 'Accounts',
     description: 'Manage your cash, bank accounts, and e-wallets in one place.',
+    Image: 'https://images.unsplash.com/photo-1621416894569-0f39ed31d247?q=80&w=600', 
     gradient: 'from-pink-500/10 to-rose-500/5',
     border: 'border-pink-500/20',
     hoverBorder: 'hover:border-pink-500/50',
@@ -27,7 +28,7 @@ const features = [
     accentIcon: TrendingUp,
     label: 'Transactions',
     description: 'Track every income and expense across all your accounts.',
-    bgImage:'/public/dashboard image/trancaction',
+    Image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=600', 
     gradient: 'from-purple-500/10 to-pink-500/5',
     border: 'border-purple-500/20',
     hoverBorder: 'hover:border-purple-500/50',
@@ -42,7 +43,7 @@ const features = [
     accentIcon: Target,
     label: 'Goals',
     description: 'Set savings targets and watch your progress grow in real time.',
-    gradient: 'from-blue-500/10 to-purple-500/5',
+    Image: 'https://images.unsplash.com/photo-1512428559087-560fa5ceab42?q=80&w=600',
     border: 'border-blue-500/20',
     hoverBorder: 'hover:border-blue-500/50',
     iconColor: 'text-blue-400',
@@ -56,6 +57,7 @@ const features = [
     accentIcon: PieChart,
     label: 'Reports',
     description: 'Visualize spending patterns and export your financial data.',
+    Image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=600', 
     gradient: 'from-teal-500/10 to-blue-500/5',
     border: 'border-teal-500/20',
     hoverBorder: 'hover:border-teal-500/50',
@@ -116,7 +118,7 @@ export default function Dashboard() {
         {features.map(({
           to, icon: Icon, accentIcon: AccentIcon,
           label, description, gradient, border, hoverBorder,
-          iconColor, iconBg, glow, tag,
+          iconColor, iconBg, glow, tag, Image,
         }) => (
           <Link
             key={to}
@@ -129,6 +131,11 @@ export default function Dashboard() {
               transition-all duration-300 hover:scale-[1.02]
               overflow-hidden
             `}
+            style={{
+              backgroundImage: `linear-gradient(to bottom, rgba(5, 5, 5, 0.73), rgba(5, 5, 5, 0.93)), url("${Image}")`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
           >
             {/* Dot grid background */}
             <div
