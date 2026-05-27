@@ -9,8 +9,10 @@ export type Account = {
   id: string;
   user_id: string;
   name: string;
-  platform_type: 'cash' | 'bank' | 'ewallet_tng' | 'ewallet_grabpay';
+  platform_type: 'cash' | 'bank_id' | 'bank_sg' | 'bank_my' | 'ewallet_gopay' | 'ewallet_shopeepay' | 'ewallet_tng';
   opening_balance: number;
+  currency: string;
+  brankas_account_id: string | null;
   created_at: string;
 };
 

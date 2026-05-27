@@ -7,4 +7,13 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  server: {
+    proxy: {
+      '/brankas-api': {
+        target: 'https://direct.sandbox.bnk.to',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/brankas-api/, ''),
+      },
+    },
+  },
 });
