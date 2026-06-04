@@ -5,7 +5,7 @@ import CountryGroup from '../components/accounts/CountryGroup'
 import ConnectModal from '../components/accounts/ConnectModal'
 
 export default function Accounts() {
-  const { groups, walletAccounts, totalBalanceUSD, loading, error, connectAccount } = useWallet()
+  const { groups, walletAccounts, totalBalanceMYR, loading, error, connectAccount } = useWallet()
   const [modalOpen, setModalOpen] = useState(false)
 
   const connectedProviderIds = new Set(walletAccounts.map(a => a.provider.id))
@@ -54,10 +54,10 @@ export default function Accounts() {
                 </p>
               </div>
               <p className="text-3xl font-bold text-white tracking-tight">
-                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalBalanceUSD)}
+                RM{new Intl.NumberFormat('en-MS', { minimumFractionDigits: 2 , maximumFractionDigits: 2 }).format(totalBalanceMYR)}
               </p>
               <p className="text-[11px] text-white/20 mt-1.5 font-light">
-                Approximate USD equivalent using fixed exchange rates
+                Approximate MYR equivalent using fixed exchange rates
               </p>
             </div>
             <div className="relative z-10 hidden sm:flex flex-col items-end gap-1">

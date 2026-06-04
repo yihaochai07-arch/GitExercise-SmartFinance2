@@ -12,11 +12,11 @@ import { generateMockTransactions } from '../services/mockTransactions'
 import { useAuth } from '../context/AuthContext'
 
 // Approximate exchange rates for USD display (demo only)
-const TO_USD: Record<string, number> = {
-  IDR: 1 / 16_000,
-  SGD: 0.74,
-  MYR: 0.21,
-  USD: 1,
+const TO_MYR: Record<string, number> = {
+  MYR: 1,
+  SGD: 3.30,
+  IDR: 1/360,
+  USD: 4.45,
 }
 
 export type WalletAccount = Account & {
@@ -75,7 +75,7 @@ export function useWallet() {
   const { accounts, loading: accountsLoading, error: accountsError, addAccount, refetch } = useAccounts()
   // Enrich each account with provider config + mock balance
   const walletAccounts: WalletAccount[] = accounts.map(account => {
-    const provider = Object.values(PROVIDER_MAP).find(p => p.platform_type === account.platform_type)
+    const provider = Object.values(PROVIDER_MAP).find(p => p.name.toLowerCase() === account.name.toLowerCase())
       ?? PROVIDERS[0]
     const liveBalance = getMockBalance(account.id, provider.mockBalanceRange)
 
@@ -107,8 +107,8 @@ export function useWallet() {
     })
     .filter((g): g is WalletGroup => g !== null)
 
-  const totalBalanceUSD = walletAccounts.reduce((sum, a) => {
-    const rate = TO_USD[a.currency] ?? 1
+  const totalBalanceMYR = walletAccounts.reduce((sum, a) => {
+    const rate = TO_MYR[a.currency] ?? 1
     return sum + a.liveBalance * rate
   }, 0)
 
@@ -137,7 +137,7 @@ export function useWallet() {
   return {
     groups,
     walletAccounts,
-    totalBalanceUSD,
+    totalBalanceMYR,
     loading: accountsLoading,
     error: accountsError,
     connectAccount,
