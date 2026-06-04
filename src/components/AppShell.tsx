@@ -15,6 +15,7 @@ export default function AppShell() {
     { name: 'Transactions', path: '/app/transactions', icon: Wallet },
     { name: 'Goals', path: '/app/goals', icon: Flag },
     { name: 'Reports', path: '/app/reports', icon: FileText },
+    { name: 'Budgets', path: '/app/budgets', icon: FileText }
   ];
 
   const handleSignOut = async () => {
