@@ -9,63 +9,58 @@ export default function Transactions() {
   const { accounts } = useAccounts()
   const { categories } = useCategories()
   const [filterAccountId, setFilterAccountId] = useState<string>('all')
-  const [withdrawAmount, setWithdrawAmount] = useState('')
-  const [withdrawAccountId, setWithdrawAccountId] = useState('')
-  const [withdrawCategoryId, setWithdrawCategoryId] = useState('')
-  const [withdrawDate, setWithdrawDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [cashFlowAmount, setCashFlowAmount] = useState('')
+  const [cashFlowCategoryId, setCashFlowCategoryId] = useState('')
+  const [cashFlowDate, setCashFlowDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [formMessage, setFormMessage] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
 
-  const bankCategories = useMemo(
-    () => categories.filter(c => c.name.toLowerCase().includes('bank')),
-    [categories]
-  )
+  const cashFlowAccountId = filterAccountId !== 'all'
+    ? filterAccountId
+    : accounts[0]?.id ?? ''
 
   useEffect(() => {
-    if (!withdrawAccountId && accounts.length > 0) {
-      setWithdrawAccountId(accounts[0].id)
+    if (!cashFlowCategoryId && categories.length > 0) {
+      setCashFlowCategoryId(categories[0].id)
     }
-  }, [accounts, withdrawAccountId])
+  }, [categories, cashFlowCategoryId])
 
-  useEffect(() => {
-    if (!withdrawCategoryId && bankCategories.length > 0) {
-      setWithdrawCategoryId(bankCategories[0].id)
-    }
-  }, [bankCategories, withdrawCategoryId])
-
-  async function handleAddWithdrawal(event: FormEvent<HTMLFormElement>) {
+  async function handleAddCashFlow(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setFormMessage(null)
     setFormError(null)
 
-    const amountValue = Number(withdrawAmount)
-    if (!withdrawAccountId || !withdrawCategoryId) {
-      setFormError('Please select an account and category.')
-      return
-    }
+    const amountValue = Math.abs(Number(cashFlowAmount))
 
-    if (bankCategories.length === 0) {
-      setFormError('No bank account categories are available.')
+    if (!cashFlowCategoryId) {
+      setFormError('Please select a category.')
       return
     }
 
     if (Number.isNaN(amountValue) || amountValue <= 0) {
-      setFormError('Please enter a valid withdrawal amount.')
+      setFormError('Please enter a valid cash flow amount.')
       return
     }
 
-    await addTransaction({
+    if (!cashFlowAccountId) {
+      setFormError('Please add an account before recording expenses by cash.')
+      return
+    }
+
+    const newTransaction = await addTransaction({
       amount: amountValue,
       type: 'expense',
-      category_id: withdrawCategoryId,
-      account_id: withdrawAccountId,
-      date: withdrawDate,
+      category_id: cashFlowCategoryId,
+      account_id: cashFlowAccountId,
+      date: cashFlowDate,
     })
 
-    if (!error) {
-      setFormMessage('Withdrawal recorded successfully.')
-      setWithdrawAmount('')
-      setWithdrawDate(new Date().toISOString().slice(0, 10))
+    if (newTransaction) {
+      setFormMessage('Expense recorded successfully.')
+      setCashFlowAmount('')
+      setCashFlowDate(new Date().toISOString().slice(0, 10))
+    } else {
+      setFormError(error ?? 'Failed to record expense.')
     }
   }
 
@@ -105,7 +100,7 @@ export default function Transactions() {
       style: 'currency',
       currency,
       maximumFractionDigits: currency === 'IDR' ? 0 : 2,
-    }).format(amount)
+    }).format(Math.abs(amount))
     return type === 'income' ? `+${formatted}` : `-${formatted}`
   }
 
@@ -138,23 +133,23 @@ export default function Transactions() {
           )}
         </div>
 
-        {/* Withdrawal record form */}
+        {/* Expenses by cash record form */}
         <div className="mb-8 p-5 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-white">Record withdrawal</h2>
-              <p className="text-sm text-white/40">Save a new withdrawal transaction to your account history.</p>
+              <h2 className="text-lg font-semibold text-white">Expenses by Cash</h2>
+              <p className="text-sm text-white/40">Save a new cash expense to your account history.</p>
             </div>
           </div>
-          <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleAddWithdrawal}>
+          <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleAddCashFlow}>
             <label className="space-y-2 text-sm text-white/70">
               Amount
               <input
                 type="number"
                 min="0"
                 step="0.01"
-                value={withdrawAmount}
-                onChange={e => setWithdrawAmount(e.target.value)}
+                value={cashFlowAmount}
+                onChange={e => setCashFlowAmount(e.target.value)}
                 className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
                 placeholder="100.00"
               />
@@ -163,34 +158,22 @@ export default function Transactions() {
               Date
               <input
                 type="date"
-                value={withdrawDate}
-                onChange={e => setWithdrawDate(e.target.value)}
+                value={cashFlowDate}
+                onChange={e => setCashFlowDate(e.target.value)}
                 className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
               />
             </label>
             <label className="space-y-2 text-sm text-white/70">
-              Account
-              <select
-                value={withdrawAccountId}
-                onChange={e => setWithdrawAccountId(e.target.value)}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
-              >
-                {accounts.map(account => (
-                  <option key={account.id} value={account.id}>{account.name}</option>
-                ))}
-              </select>
-            </label>
-            <label className="space-y-2 text-sm text-white/70">
               Category
               <select
-                value={withdrawCategoryId}
-                onChange={e => setWithdrawCategoryId(e.target.value)}
+                value={cashFlowCategoryId}
+                onChange={e => setCashFlowCategoryId(e.target.value)}
                 className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
               >
-                {bankCategories.length === 0 ? (
-                  <option value="" disabled>No bank account categories found</option>
+                {categories.length === 0 ? (
+                  <option value="" disabled>No categories available</option>
                 ) : (
-                  bankCategories.map(category => (
+                  categories.map(category => (
                     <option key={category.id} value={category.id}>{category.name}</option>
                   ))
                 )}
@@ -201,7 +184,7 @@ export default function Transactions() {
                 type="submit"
                 className="w-full rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-400"
               >
-                Save withdrawal
+                Save expense
               </button>
             </div>
           </form>

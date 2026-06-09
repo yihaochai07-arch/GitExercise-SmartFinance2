@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 export type Transaction = {
     id: string
@@ -7,9 +8,12 @@ export type Transaction = {
     type: "income" | "expense"
     category_id: string
     account_id: string
+    user_id: string
     date: string
     created_at: string
 }
+
+type NewTransaction = Omit<Transaction, "id" | "created_at" | "user_id">
 
 type UseTransactionsReturn = {
     transactions: Transaction[]
@@ -17,17 +21,18 @@ type UseTransactionsReturn = {
     totalIncome: number
     loading: boolean
     error: string | null
-    addTransaction: (t: Omit<Transaction, "id" | "created_at">) => Promise<void>
+    addTransaction: (t: NewTransaction) => Promise<Transaction | null>
 }
 
 export function useTransactions(): UseTransactionsReturn {
+    const { user } = useAuth()
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
         fetchTransactions()
-    }, [])
+    }, [user])
 
     async function fetchTransactions() {
         try {
@@ -46,28 +51,36 @@ export function useTransactions(): UseTransactionsReturn {
         }
     }
 
-    async function addTransaction(t: Omit<Transaction, "id" | "created_at">) {
+    async function addTransaction(t: NewTransaction): Promise<Transaction | null> {
+        if (!user) {
+            setError('Not authenticated')
+            return null
+        }
+
         try {
+            const transaction = { ...t, user_id: user.id }
             const { data, error } = await supabase
                 .from('transactions')
-                .insert([t])
+                .insert([transaction])
                 .select()
                 .single()
 
             if (error) throw error
             setTransactions(prev => [data, ...prev])
+            return data
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to add transaction')
+            return null
         }
     }
 
     const totalExpense = transactions
         .filter(t => t.type === "expense")
-        .reduce((sum, t) => sum + t.amount, 0)
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0)
 
     const totalIncome = transactions
         .filter(t => t.type === "income")
-        .reduce((sum, t) => sum + t.amount, 0)
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0)
 
     return { transactions, totalExpense, totalIncome, loading, error, addTransaction }
 }
