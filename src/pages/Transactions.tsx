@@ -14,6 +14,7 @@ export default function Transactions() {
   const [cashFlowDate, setCashFlowDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [formMessage, setFormMessage] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
+  const [showCashFlowForm, setShowCashFlowForm] = useState(false)
 
   const cashFlowAccountId = filterAccountId !== 'all'
     ? filterAccountId
@@ -38,7 +39,7 @@ export default function Transactions() {
     }
 
     if (Number.isNaN(amountValue) || amountValue <= 0) {
-      setFormError('Please enter a valid cash flow amount.')
+      setFormError('Please enter a valid expense amount.')
       return
     }
 
@@ -59,6 +60,7 @@ export default function Transactions() {
       setFormMessage('Expense recorded successfully.')
       setCashFlowAmount('')
       setCashFlowDate(new Date().toISOString().slice(0, 10))
+      setTimeout(() => setShowCashFlowForm(false), 1500)
     } else {
       setFormError(error ?? 'Failed to record expense.')
     }
@@ -119,171 +121,198 @@ export default function Transactions() {
             <h1 className="text-2xl font-bold text-white tracking-tight">Transactions</h1>
             <p className="text-sm text-white/30 mt-1 font-light">Your recent activity</p>
           </div>
-          {accounts.length > 0 && (
-            <select
-              value={filterAccountId}
-              onChange={e => setFilterAccountId(e.target.value)}
-              className="bg-[#0a0a0a] border border-white/[0.06] text-white/60 text-sm rounded-xl px-3 py-2 outline-none focus:border-white/[0.12] cursor-pointer"
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowCashFlowForm(true)}
+              className="rounded-2xl bg-emerald-500 px-6 py-2 text-sm font-semibold text-black transition hover:bg-emerald-400"
             >
-              <option value="all">All accounts</option>
-              {accounts.map(a => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
-          )}
-        </div>
-
-        {/* Expenses by cash record form */}
-        <div className="mb-8 p-5 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-white">Expenses by Cash</h2>
-              <p className="text-sm text-white/40">Save a new cash expense to your account history.</p>
-            </div>
-          </div>
-          <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleAddCashFlow}>
-            <label className="space-y-2 text-sm text-white/70">
-              Amount
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={cashFlowAmount}
-                onChange={e => setCashFlowAmount(e.target.value)}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
-                placeholder="100.00"
-              />
-            </label>
-            <label className="space-y-2 text-sm text-white/70">
-              Date
-              <input
-                type="date"
-                value={cashFlowDate}
-                onChange={e => setCashFlowDate(e.target.value)}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
-              />
-            </label>
-            <label className="space-y-2 text-sm text-white/70">
-              Category
+              Expenses by Cash
+            </button>
+            {accounts.length > 0 && (
               <select
-                value={cashFlowCategoryId}
-                onChange={e => setCashFlowCategoryId(e.target.value)}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
+                value={filterAccountId}
+                onChange={e => setFilterAccountId(e.target.value)}
+                className="bg-[#0a0a0a] border border-white/[0.06] text-white/60 text-sm rounded-xl px-3 py-2 outline-none focus:border-white/[0.12] cursor-pointer"
               >
-                {categories.length === 0 ? (
-                  <option value="" disabled>No categories available</option>
-                ) : (
-                  categories.map(category => (
-                    <option key={category.id} value={category.id}>{category.name}</option>
-                  ))
-                )}
+                <option value="all">All accounts</option>
+                {accounts.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
               </select>
-            </label>
-            <div className="sm:col-span-2">
-              <button
-                type="submit"
-                className="w-full rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-400"
-              >
-                Save expense
-              </button>
-            </div>
-          </form>
-          {formError && <p className="mt-3 text-sm text-rose-400">{formError}</p>}
-          {formMessage && <p className="mt-3 text-sm text-emerald-400">{formMessage}</p>}
+            )}
+          </div>
         </div>
 
-        {/* Summary */}
-        {transactions.length > 0 && (
-          <div className="grid grid-cols-2 gap-4 mb-10">
-            <div className="p-5 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
-              <div className="flex items-center gap-2 mb-1">
-                <ArrowDownLeft size={13} className="text-emerald-400/60" />
-                <p className="text-xs font-medium text-white/40 uppercase tracking-widest">Income</p>
+        {/* Cash Flow Modal */}
+        {showCashFlowForm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="p-5 rounded-3xl bg-[#0a0a0a] border border-white/[0.06] shadow-2xl w-full max-w-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Expenses by Cash</h2>
+                  <p className="text-sm text-white/40">Save a new cash expense to your account history.</p>
+                </div>
+                <button
+                  onClick={() => setShowCashFlowForm(false)}
+                  className="text-white/40 hover:text-white/70 text-xl leading-none"
+                >
+                  ✕
+                </button>
               </div>
-              <p className="text-xl font-bold text-emerald-400">
-                +{new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }).format(totalIncome)}
-              </p>
-            </div>
-            <div className="p-5 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
-              <div className="flex items-center gap-2 mb-1">
-                <ArrowUpRight size={13} className="text-rose-400/60" />
-                <p className="text-xs font-medium text-white/40 uppercase tracking-widest">Expenses</p>
-              </div>
-              <p className="text-xl font-bold text-rose-400">
-                -{new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }).format(totalExpense)}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Loading */}
-        {loading && (
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="h-16 rounded-xl bg-white/[0.03] animate-pulse border border-white/[0.04]" />
-            ))}
-          </div>
-        )}
-
-        {/* Error */}
-        {error && !loading && (
-          <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/5">
-            <p className="text-sm text-red-400">{error}</p>
-          </div>
-        )}
-
-        {/* Empty */}
-        {!loading && !error && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mb-5">
-              <LayoutList size={24} className="text-white/20" />
-            </div>
-            <h2 className="text-lg font-semibold text-white/60 mb-2">No transactions yet</h2>
-            <p className="text-sm text-white/25 font-light max-w-xs">
-              Connect an account to see your transaction history here.
-            </p>
-          </div>
-        )}
-
-        {/* Transaction groups */}
-        {!loading && grouped.map(([date, txns]) => (
-          <div key={date} className="mb-8">
-            <p className="text-xs font-medium text-white/30 uppercase tracking-widest mb-3">
-              {formatDate(date)}
-            </p>
-            <div className="space-y-1">
-              {txns.map(t => {
-                const category = categoryMap[t.category_id]
-                const account = accountMap[t.account_id]
-                const currency = account?.currency ?? 'MYR'
-                const isIncome = t.type === 'income'
-                return (
-                  <div
-                    key={t.id}
-                    className="flex items-center justify-between px-4 py-3.5 rounded-xl bg-[#0a0a0a] border border-white/[0.06] hover:border-white/[0.12] hover:scale-[1.01] transition-all duration-150"
+              <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleAddCashFlow}>
+                <label className="space-y-2 text-sm text-white/70">
+                  Amount
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={cashFlowAmount}
+                    onChange={e => setCashFlowAmount(e.target.value)}
+                    className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
+                    placeholder="100.00"
+                  />
+                </label>
+                <label className="space-y-2 text-sm text-white/70">
+                  Date
+                  <input
+                    type="date"
+                    value={cashFlowDate}
+                    onChange={e => setCashFlowDate(e.target.value)}
+                    className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
+                  />
+                </label>
+                <label className="space-y-2 text-sm text-white/70">
+                  Category
+                  <select
+                    value={cashFlowCategoryId}
+                    onChange={e => setCashFlowCategoryId(e.target.value)}
+                    className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl leading-none w-8 text-center">
-                        {category?.icon ?? '📦'}
-                      </span>
-                      <div>
-                        <p className="text-sm font-medium text-white/80">
-                          {category?.name ?? 'Other'}
-                        </p>
-                        {account && (
-                          <p className="text-xs text-white/30 mt-0.5">{account.name}</p>
-                        )}
-                      </div>
-                    </div>
-                    <span className={`text-sm font-semibold tabular-nums ${isIncome ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {formatAmount(t.amount, currency, t.type)}
-                    </span>
-                  </div>
-                )
-              })}
+                    {categories.length === 0 ? (
+                      <option value="" disabled>No categories available</option>
+                    ) : (
+                      categories.filter(c => c.name !== 'Salary').map(category => (
+                        <option key={category.id} value={category.id}>{category.name}</option>
+                      ))
+                    )}
+                  </select>
+                </label>
+                <div className="sm:col-span-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCashFlowForm(false)}
+                    className="rounded-2xl bg-white/10 px-6 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-2xl bg-emerald-500 px-6 py-2 text-sm font-semibold text-black transition hover:bg-emerald-400"
+                  >
+                    Save expense
+                  </button>
+                </div>
+              </form>
+              {formError && <p className="mt-3 text-sm text-rose-400">{formError}</p>}
+              {formMessage && <p className="mt-3 text-sm text-emerald-400">{formMessage}</p>}
             </div>
           </div>
-        ))}
+        )}
+
+        <div>
+          {/* Summary */}
+          {transactions.length > 0 && (
+            <div className="grid grid-cols-2 gap-4 mb-10">
+              <div className="p-5 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
+                <div className="flex items-center gap-2 mb-1">
+                  <ArrowDownLeft size={13} className="text-emerald-400/60" />
+                  <p className="text-xs font-medium text-white/40 uppercase tracking-widest">Income</p>
+                </div>
+                <p className="text-xl font-bold text-emerald-400">
+                  +{new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }).format(totalIncome)}
+                </p>
+              </div>
+              <div className="p-5 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
+                <div className="flex items-center gap-2 mb-1">
+                  <ArrowUpRight size={13} className="text-rose-400/60" />
+                  <p className="text-xs font-medium text-white/40 uppercase tracking-widest">Expenses</p>
+                </div>
+                <p className="text-xl font-bold text-rose-400">
+                  -{new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }).format(totalExpense)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Loading */}
+          {loading && (
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="h-16 rounded-xl bg-white/[0.03] animate-pulse border border-white/[0.04]" />
+              ))}
+            </div>
+          )}
+
+          {/* Error */}
+          {error && !loading && (
+            <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/5">
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
+
+          {/* Empty */}
+          {!loading && !error && filtered.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mb-5">
+                <LayoutList size={24} className="text-white/20" />
+              </div>
+              <h2 className="text-lg font-semibold text-white/60 mb-2">No transactions yet</h2>
+              <p className="text-sm text-white/25 font-light max-w-xs">
+                Connect an account to see your transaction history here.
+              </p>
+            </div>
+          )}
+
+          {/* Transaction groups */}
+          {!loading && grouped.map(([date, txns]) => (
+            <div key={date} className="mb-8">
+              <p className="text-xs font-medium text-white/30 uppercase tracking-widest mb-3">
+                {formatDate(date)}
+              </p>
+              <div className="space-y-1">
+                {txns.map(t => {
+                  const category = categoryMap[t.category_id]
+                  const account = accountMap[t.account_id]
+                  const currency = account?.currency ?? 'MYR'
+                  const isIncome = t.type === 'income'
+                  return (
+                    <div
+                      key={t.id}
+                      className="flex items-center justify-between px-4 py-3.5 rounded-xl bg-[#0a0a0a] border border-white/[0.06] hover:border-white/[0.12] hover:scale-[1.01] transition-all duration-150"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl leading-none w-8 text-center">
+                          {category?.icon ?? '📦'}
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium text-white/80">
+                            {category?.name ?? 'Other'}
+                          </p>
+                          {account && (
+                            <p className="text-xs text-white/30 mt-0.5">{account.platform_type === 'cash' ? 'Cash' : account.name}</p>
+                          )}
+                        </div>
+                      </div>
+                      <span className={`text-sm font-semibold tabular-nums ${isIncome ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {formatAmount(t.amount, currency, t.type)}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
