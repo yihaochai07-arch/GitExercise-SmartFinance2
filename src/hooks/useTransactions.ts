@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'   
 
 export type Transaction = {
     id: string
+    user_id: string                                 
     amount: number
-    type: "income" | "expense"
+    type: 'income' | 'expense'
     category_id: string
     account_id: string
     date: string
@@ -17,17 +19,18 @@ type UseTransactionsReturn = {
     totalIncome: number
     loading: boolean
     error: string | null
-    addTransaction: (t: Omit<Transaction, "id" | "created_at">) => Promise<void>
+    addTransaction: (t: Omit<Transaction, 'id' | 'created_at' | 'user_id'>) => Promise<void>
 }
 
 export function useTransactions(): UseTransactionsReturn {
+    const { user } = useAuth()                      
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        fetchTransactions()
-    }, [])
+        if (user) fetchTransactions()               
+         }, [user])                                      
 
     async function fetchTransactions() {
         try {
@@ -35,6 +38,7 @@ export function useTransactions(): UseTransactionsReturn {
             const { data, error } = await supabase
                 .from('transactions')
                 .select('*')
+                .eq('user_id', user!.id)            
                 .order('date', { ascending: false })
 
             if (error) throw error
@@ -46,11 +50,12 @@ export function useTransactions(): UseTransactionsReturn {
         }
     }
 
-    async function addTransaction(t: Omit<Transaction, "id" | "created_at">) {
+    async function addTransaction(t: Omit<Transaction, 'id' | 'created_at' | 'user_id'>) {
+        if (!user) return                           
         try {
             const { data, error } = await supabase
                 .from('transactions')
-                .insert([t])
+                .insert([{ ...t, user_id: user.id }])  
                 .select()
                 .single()
 
@@ -62,11 +67,11 @@ export function useTransactions(): UseTransactionsReturn {
     }
 
     const totalExpense = transactions
-        .filter(t => t.type === "expense")
+        .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + t.amount, 0)
 
     const totalIncome = transactions
-        .filter(t => t.type === "income")
+        .filter(t => t.type === 'income')
         .reduce((sum, t) => sum + t.amount, 0)
 
     return { transactions, totalExpense, totalIncome, loading, error, addTransaction }
