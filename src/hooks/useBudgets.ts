@@ -3,23 +3,20 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'   
 export type Budget = {
     id: string
-    user_id: string                                 
+    user_id: string
+    category_id: string
     limit: number
-    period: "monthly"
+    period: 'monthly'
     created_at: string
 }
 
-export type BudgetStatus = "safe" | "warning" | "exceeded"
+export type BudgetStatus = 'safe' | 'warning' | 'exceeded'
 
 type UseBudgetsReturn = {
     budgets: Budget[]
     getBudgetStatus: (spent: number, limit: number) => BudgetStatus
-<<<<<<< HEAD
     loading: boolean
     saving: boolean
-=======
-    addBudget: (budget: Omit<Budget, 'id' | 'created_at' | 'user_id'>) => Promise<Budget | null> 
->>>>>>> 5a2f799c2d88810dbc403cb3dc8bd0d4cef8a195
     error: string | null
     saveBudget: (category_id: string, limit: number) => Promise<{ data: Budget | null; error: string | null }>
 }
@@ -52,7 +49,6 @@ export function useBudgets(): UseBudgetsReturn {
         }
     }
 
-<<<<<<< HEAD
     async function saveBudget(category_id: string, limit: number): Promise<{ data: Budget | null; error: string | null }> {
         try {
             setSaving(true)
@@ -68,13 +64,13 @@ export function useBudgets(): UseBudgetsReturn {
                     .single()
 
                 if (error) throw error
-                setBudgets((prev) => prev.map((budget) => budget.id === existingBudget.id ? data : budget))
+                setBudgets((prev) => prev.map((budget) => (budget.id === existingBudget.id ? data : budget)))
                 return { data, error: null }
             }
 
             const { data, error } = await supabase
                 .from('budgets')
-                .insert([{ category_id, limit, period: 'monthly' }])
+                .insert([{ category_id, limit, period: 'monthly', user_id: user!.id }])
                 .select('*')
                 .single()
 
@@ -89,30 +85,6 @@ export function useBudgets(): UseBudgetsReturn {
             setSaving(false)
         }
     }
-    
-=======
-
-    async function addBudget(
-        budget: Omit<Budget, 'id' | 'created_at' | 'user_id'>
-    ): Promise<Budget | null> {
-        if (!user) return null
-        try {
-            const { data, error } = await supabase
-                .from('budgets')
-                .insert([{ ...budget, user_id: user.id }])
-                .select()
-                .single()
-            if (error) throw error
-            setBudgets(prev => [...prev, data])
-            return data
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to add budget')
-            return null
-        }
-    }
-    // ── END of new function ───────────────────────────────────────
-
->>>>>>> 5a2f799c2d88810dbc403cb3dc8bd0d4cef8a195
     function getBudgetStatus(spent: number, limit: number): BudgetStatus {
         const ratio = spent / limit
         if (ratio < 0.8) return "safe"
@@ -120,9 +92,5 @@ export function useBudgets(): UseBudgetsReturn {
         return "exceeded"
     }
 
-<<<<<<< HEAD
     return { budgets, getBudgetStatus, loading, saving, error, saveBudget }
-=======
-    return { budgets, getBudgetStatus, addBudget, error }  
->>>>>>> 5a2f799c2d88810dbc403cb3dc8bd0d4cef8a195
 }
