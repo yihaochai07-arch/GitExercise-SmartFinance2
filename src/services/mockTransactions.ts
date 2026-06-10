@@ -57,27 +57,27 @@ const EXPENSE_RANGES: Record<string, Record<string, AmountRange>> = {
     'Other':          [5, 50],
   },
   IDR: {
-    'Food & Dining':  [15_000, 80_000],
-    'Transport':      [10_000, 50_000],
-    'Shopping':       [50_000, 600_000],
-    'Entertainment':  [30_000, 200_000],
-    'Health':         [50_000, 350_000],
-    'Utilities':      [100_000, 500_000],
-    'Other':          [10_000, 80_000],
+    'Food & Dining':  [1_000, 8_000],
+    'Transport':      [1_000, 15_000],
+    'Shopping':       [5_000, 6_000],
+    'Entertainment':  [3_000, 20_000],
+    'Health':         [5_000, 35_000],
+    'Utilities':      [1_000, 50_000],
+    'Other':          [1_000, 8_000],
   },
 }
 
 const INCOME_RANGES: Record<string, AmountRange> = {
   SGD: [3_500, 9_000],
   MYR: [2_500, 7_000],
-  IDR: [6_000_000, 18_000_000],
+  IDR: [60_000, 180_000],
 }
 
 // E-wallet income is top-ups (smaller)
 const TOPUP_RANGES: Record<string, AmountRange> = {
   SGD: [20, 200],
   MYR: [20, 200],
-  IDR: [50_000, 500_000],
+  IDR: [10_000, 50_000],
 }
 
 const EXPENSE_CATEGORY_NAMES = [
