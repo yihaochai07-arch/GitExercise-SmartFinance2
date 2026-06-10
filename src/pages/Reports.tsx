@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { BarChart3, ArrowUpRight, ArrowDownRight, Wallet, Download } from 'lucide-react'
+import { BarChart3, ArrowUpRight, ArrowDownRight, Wallet, Download, Calendar } from 'lucide-react'
 import { useTransactions } from '../hooks/useTransactions'
 import { useWallet } from '../hooks/useWallet'
 import { useCategories } from '../hooks/useCategories'
@@ -17,7 +17,14 @@ export default function Reports() {
   const loading = txLoading || walletLoading
   const error = txError || walletError
 
-  // Deeply flatten the structured accounts out of country groups based on your AccountCard schema
+  const monthLabels = useMemo(() => {
+    return [
+      { monthKey: '2026-06', displayLabel: 'June 2026', shortLabel: 'June' },
+      { monthKey: '2026-05', displayLabel: 'May 2026', shortLabel: 'May' },
+      { monthKey: '2026-04', displayLabel: 'April 2026', shortLabel: 'April' }
+    ]
+  }, [])
+
   const detailedAccountsList = useMemo(() => {
     if (!groups || !Array.isArray(groups)) return []
     const flatList: any[] = []
@@ -49,42 +56,54 @@ export default function Reports() {
   }, [totalBalanceMYR])
 
   const reportData = useMemo(() => {
-    if (!transactions.length) return { salary: 0, salesExpenses: 0, totalIncome: 0, categoryBreakdown: {} }
+    const defaultMonthData = () => ({ income: 0, expense: 0 })
+    
+    const monthlyStats: Record<string, { income: number; expense: number }> = {
+      '2026-06': defaultMonthData(),
+      '2026-05': defaultMonthData(),
+      '2026-04': defaultMonthData(),
+    }
 
-    const now = new Date()
-    const cutoffDate = new Date()
-    cutoffDate.setMonth(now.getMonth() - 3)
+    let totalIncome3M = 0
+    let totalExpense3M = 0
+    const breakdown3M: Record<string, number> = {}
+    const incomeBreakdown3M: Record<string, number> = {}
 
-    let salary = 0
-    let salesExpenses = 0
-    let totalIncome = 0
-    const breakdown: Record<string, number> = {}
+    monthLabels.forEach(m => {
+      incomeBreakdown3M[m.shortLabel] = 0
+    })
 
     transactions.forEach(t => {
       if (filterAccountId !== 'all' && t.account_id !== filterAccountId) return
 
       const txnDate = new Date(t.date)
-      if (txnDate < cutoffDate) return 
-
+      const txnMonthKey = `${txnDate.getFullYear()}-${String(txnDate.getMonth() + 1).padStart(2, '0')}`
       const amount = Number(t.amount) || 0
 
-      if (t.type === 'income') {
-        totalIncome += amount
-        
-        const categoryName = categories.find(c => c.id === t.category_id)?.name?.toLowerCase() ?? ''
-        if (categoryName.includes('salary') || categoryName.includes('wage')) {
-          salary += amount
+      if (monthlyStats[txnMonthKey] !== undefined) {
+        const currentMonthLabel = monthLabels.find(m => m.monthKey === txnMonthKey)?.shortLabel || 'Other'
+        if (t.type === 'income') {
+          monthlyStats[txnMonthKey].income += amount
+          totalIncome3M += amount
+          incomeBreakdown3M[currentMonthLabel] = (incomeBreakdown3M[currentMonthLabel] || 0) + amount
+        } else if (t.type === 'expense') {
+          monthlyStats[txnMonthKey].expense += amount
+          totalExpense3M += amount
+          
+          const catName = categories.find(c => c.id === t.category_id)?.name ?? 'Other'
+          breakdown3M[catName] = (breakdown3M[catName] || 0) + amount
         }
-      } else if (t.type === 'expense') {
-        salesExpenses += amount
-        
-        const catName = categories.find(c => c.id === t.category_id)?.name ?? 'Other'
-        breakdown[catName] = (breakdown[catName] || 0) + amount
       }
     })
 
-    return { salary, salesExpenses, totalIncome, categoryBreakdown: breakdown }
-  }, [transactions, filterAccountId, categories])
+    return { 
+      monthlyStats, 
+      totalIncome: totalIncome3M, 
+      salesExpenses: totalExpense3M, 
+      categoryBreakdown: breakdown3M,
+      incomeBreakdown: incomeBreakdown3M
+    }
+  }, [transactions, filterAccountId, categories, monthLabels])
 
   const formatCurrency = (val: number) => {
     const symbol = primaryCurrency === 'MYR' ? 'RM' : primaryCurrency + ' '
@@ -138,9 +157,9 @@ export default function Reports() {
         heightLeft -= pageHeight
       }
 
-      pdf.save(`Financial_Report_Rolling3M_${new Date().toISOString().slice(0,10)}.pdf`)
+      pdf.save(`Financial_Report_3Months_${new Date().toISOString().slice(0,10)}.pdf`)
     } catch (err) {
-      console.error('PDF export engine error:', err)
+      console.error(err)
       element.classList.remove('pdf-print-mode')
     } finally {
       setIsExporting(false)
@@ -158,7 +177,7 @@ export default function Reports() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
           <div>
             <h1 className="text-2xl font-bold text-white tracking-tight">Financial Performance</h1>
-            <p className="text-sm text-white/30 mt-1 font-light">Rolling 3-month performance overview</p>
+            <p className="text-sm text-white/30 mt-1 font-light">Comparative analysis for the last 3 months</p>
           </div>
 
           <div className="flex items-center gap-3 self-start sm:self-auto">
@@ -206,25 +225,13 @@ export default function Reports() {
           <div id="report-pdf-content" className="space-y-6 p-4 rounded-2xl bg-[#050505]">
             
             <style>{`
-              .pdf-assignment-table {
-                display: none;
-              }
-              .pdf-print-mode {
-                background-color: #ffffff !important;
-                color: #000000 !important;
-                padding: 30px !important;
-              }
+              .pdf-assignment-table { display: none; }
+              .pdf-print-mode { background-color: #ffffff !important; color: #000000 !important; padding: 30px !important; }
               .pdf-print-mode .dashboard-cards-view,
-              .pdf-print-mode .dashboard-breakdown-view {
-                display: none !important;
-              }
-              .pdf-print-mode .pdf-assignment-table {
-                display: block !important;
-                color: #111111 !important;
-                font-family: Arial, sans-serif;
-              }
+              .pdf-print-mode .dashboard-monthly-breakdown,
+              .pdf-print-mode .dashboard-category-view { display: none !important; }
+              .pdf-print-mode .pdf-assignment-table { display: block !important; color: #000000 !important; font-family: Arial, sans-serif; }
             `}</style>
-
 
             <div className="dashboard-cards-view grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
@@ -233,7 +240,7 @@ export default function Reports() {
                   <span className="text-xs font-medium text-white/40 uppercase tracking-widest">Total Assets</span>
                 </div>
                 <p className="text-2xl font-bold text-white tabular-nums">{formatSpecificCurrency(totalAssets, 'MYR')}</p>
-                <span className="text-[11px] text-white/20 mt-1 block">Live balance ({primaryCurrency})</span>
+                <span className="text-[11px] text-white/20 mt-1 block">Live balance (MYR)</span>
               </div>
 
               <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
@@ -242,7 +249,7 @@ export default function Reports() {
                   <span className="text-xs font-medium text-white/40 uppercase tracking-widest">3M Total Income</span>
                 </div>
                 <p className="text-2xl font-bold text-emerald-400 tabular-nums">{formatCurrency(reportData.totalIncome)}</p>
-                <span className="text-[11px] text-white/20 mt-1 block">Recent 3 months income</span>
+                <span className="text-[11px] text-white/20 mt-1 block">Accumulated inflow</span>
               </div>
 
               <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
@@ -251,17 +258,55 @@ export default function Reports() {
                   <span className="text-xs font-medium text-white/40 uppercase tracking-widest">3M Expenses</span>
                 </div>
                 <p className="text-2xl font-bold text-rose-400 tabular-nums">{formatCurrency(reportData.salesExpenses)}</p>
-                <span className="text-[11px] text-white/20 mt-1 block">Recent 3 months outflow</span>
+                <span className="text-[11px] text-white/20 mt-1 block">Accumulated outflow</span>
               </div>
             </div>
 
-            
-            <div className="dashboard-breakdown-view p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
-              <h3 className="text-sm font-semibold text-white/80 mb-5">Expense Breakdown (Last 3 Months)</h3>
+            <div className="dashboard-monthly-breakdown grid grid-cols-1 md:grid-cols-3 gap-4">
+              {monthLabels.map((m, index) => {
+                const data = reportData.monthlyStats[m.monthKey] || { income: 0, expense: 0 }
+                const netStatus = data.income - data.expense
+                const periodLabel = index === 0 ? 'This Month' : index === 1 ? 'Last Month' : 'Month Before Last'
+
+                return (
+                  <div key={m.monthKey} className="p-5 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] relative overflow-hidden">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <span className="text-[10px] font-bold tracking-wider uppercase text-pink-400/80 bg-pink-500/5 border border-pink-500/10 px-2 py-0.5 rounded-full">
+                          {periodLabel}
+                        </span>
+                        <h4 className="text-sm font-semibold text-white/80 mt-1.5">{m.displayLabel}</h4>
+                      </div>
+                      <Calendar size={16} className="text-white/10" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/40">Inflow:</span>
+                        <span className="text-emerald-400 font-medium">{formatCurrency(data.income)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/40">Outflow:</span>
+                        <span className="text-rose-400 font-medium">{formatCurrency(data.expense)}</span>
+                      </div>
+                      <div className="pt-2 border-t border-white/[0.04] flex justify-between text-xs font-semibold">
+                        <span className="text-white/60">Net:</span>
+                        <span className={netStatus >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                          {netStatus >= 0 ? '+' : ''}{formatCurrency(netStatus)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="dashboard-category-view p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
+              <h3 className="text-sm font-semibold text-white/80 mb-5">Expense Breakdown by Category</h3>
               {Object.keys(reportData.categoryBreakdown).length === 0 ? (
                 <div className="text-center py-10">
                   <BarChart3 size={32} className="mx-auto text-white/10 mb-2" />
-                  <p className="text-xs text-white/30">No categorical outflow recorded in the last 3 months</p>
+                  <p className="text-xs text-white/30">No categorical outflow recorded in this period</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -275,7 +320,7 @@ export default function Reports() {
                         </div>
                         <div className="w-full bg-white/[0.02] h-1.5 rounded-full overflow-hidden border border-white/[0.04]">
                           <div 
-                            className="h-full bg-gradient-to-r from-pink-500/60 to-purple-500/60 transition-all duration-300"
+                            className="h-full bg-gradient-to-r from-pink-500/60 to-purple-500/60"
                             style={{ width: `${sharePercentage}%` }}
                           />
                         </div>
@@ -286,20 +331,19 @@ export default function Reports() {
               )}
             </div>
 
-            
             <div className="pdf-assignment-table w-full max-w-2xl mx-auto hidden">
-              <div className="border-b-2 border-black pb-3 text-center mb-8">
-                <h2 className="text-xl font-bold uppercase tracking-wider text-black">Statement of Financial Performance</h2>
-                <p className="text-xs text-gray-500 mt-1 font-mono">Generated on: {new Date().toLocaleDateString()}</p>
+              <div className="pb-3 text-center mb-6">
+                <h2 className="text-xl font-bold uppercase tracking-wider text-black">STATEMENT OF FINANCIAL PERFORMANCE</h2>
+                <p className="text-xs text-black mt-1 font-sans">Generated on: {new Date().toLocaleDateString('en-GB')}</p>
+                <div className="border-b border-black mt-3" />
               </div>
 
-              
-              <div className="mb-6">
-                <h3 className="text-sm font-bold uppercase border-b border-gray-400 pb-1 mb-2 text-black">ASSETS</h3>
-                <div className="space-y-1.5 pl-4">
+              <div className="mb-5">
+                <h3 className="text-xs font-bold uppercase border-b border-black pb-1 mb-2 text-black">ASSETS</h3>
+                <div className="space-y-1 pl-1">
                   {filterAccountId === 'all' ? (
                     detailedAccountsList.map(a => (
-                      <div key={a.id} className="flex justify-between text-sm font-mono text-gray-800">
+                      <div key={a.id} className="flex justify-between text-xs font-mono text-black">
                         <span>{a.name}</span>
                         <span>{a.displayBalance}</span>
                       </div>
@@ -309,55 +353,63 @@ export default function Reports() {
                       const selected = detailedAccountsList.find(a => a.id === filterAccountId);
                       if (!selected) return null;
                       return (
-                        <div className="flex justify-between text-sm font-mono text-gray-800">
+                        <div className="flex justify-between text-xs font-mono text-black">
                           <span>{selected.name}</span>
                           <span>{selected.displayBalance}</span>
                         </div>
                       );
                     })()
                   )}
-                  <div className="flex justify-between text-sm font-bold border-t border-black pt-1 mt-1 font-mono text-black">
+                  <div className="flex justify-between text-xs font-bold border-t border-black pt-1 mt-1 font-mono text-black">
                     <span>TOTAL ASSETS (MYR Valuation)</span>
                     <span className="underline decoration-double">{formatSpecificCurrency(totalAssets, 'MYR')}</span>
                   </div>
                 </div>
               </div>
 
-              
-              <div className="mb-6">
-                <h3 className="text-sm font-bold uppercase border-b border-gray-400 pb-1 mb-2 text-black">LESS: EXPENSES (Rolling 3M)</h3>
-                <div className="space-y-1.5 pl-4">
+              <div className="mb-5">
+                <h3 className="text-xs font-bold uppercase border-b border-black pb-1 mb-2 text-black">LESS: EXPENSES (ROLLING 3M)</h3>
+                <div className="space-y-1 pl-1">
                   {Object.keys(reportData.categoryBreakdown).length === 0 ? (
-                    <div className="text-sm text-gray-400 italic pl-2">No expenses recorded</div>
+                    <div className="text-xs text-black italic pl-1">No data available</div>
                   ) : (
                     Object.entries(reportData.categoryBreakdown).map(([category, amount]) => (
-                      <div key={category} className="flex justify-between text-sm font-mono text-gray-800">
+                      <div key={category} className="flex justify-between text-xs font-mono text-black">
                         <span>{category}</span>
                         <span>{formatCurrency(amount)}</span>
                       </div>
                     ))
                   )}
-                  <div className="flex justify-between text-sm font-bold border-t border-black pt-1 mt-1 font-mono text-black">
+                  <div className="flex justify-between text-xs font-bold border-t border-black pt-1 mt-1 font-mono text-black">
                     <span>TOTAL EXPENSES</span>
                     <span>({formatCurrency(reportData.salesExpenses)})</span>
                   </div>
                 </div>
               </div>
 
-              
-              <div className="mb-6">
-                <h3 className="text-sm font-bold uppercase border-b border-gray-400 pb-1 mb-2 text-black">INCOME</h3>
-                <div className="space-y-1.5 pl-4">
-                  <div className="flex justify-between text-sm font-mono text-gray-800">
+              <div className="mb-5">
+                <h3 className="text-xs font-bold uppercase border-b border-black pb-1 mb-2 text-black">INCOME</h3>
+                <div className="space-y-1 pl-1 mb-2">
+                  {monthLabels.slice().reverse().map(m => {
+                    const monthIncome = reportData.incomeBreakdown[m.shortLabel] || 0
+                    return (
+                      <div key={m.monthKey} className="flex justify-between text-xs font-mono text-black pl-3 italic">
+                        <span>— {m.shortLabel} Earnings</span>
+                        <span>{formatCurrency(monthIncome)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="space-y-1 pl-1">
+                  <div className="flex justify-between text-xs font-mono text-black border-t border-gray-300 pt-1">
                     <span>3M Total Inflow / Earnings</span>
                     <span>{formatCurrency(reportData.totalIncome)}</span>
                   </div>
                 </div>
               </div>
 
-
-              <div className="mt-8 border-t-2 border-b-2 border-black py-2">
-                <div className="flex justify-between text-base font-bold font-mono text-black">
+              <div className="mt-6 border-t-2 border-b-2 border-black py-2 px-1">
+                <div className="flex justify-between text-sm font-bold font-mono text-black">
                   <span>NET BALANCED POSITION</span>
                   <span className="underline decoration-double">
                     {formatCurrency(reportData.totalIncome - reportData.salesExpenses)}
