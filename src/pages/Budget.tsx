@@ -129,6 +129,7 @@ export default function BudgetPage() {
         icon: '🏷️',
         color: '#c1c1c1',
       }
+
       const spent = spendByCategory[budget.category_id] ?? 0
       const remaining = budget.limit - spent
       const percentage = budget.limit > 0 ? (spent / budget.limit) * 100 : 0
