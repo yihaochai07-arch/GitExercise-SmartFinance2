@@ -14,17 +14,17 @@ export type ProviderConfig = {
 
 export const PROVIDERS: ProviderConfig[] = [
   // Indonesia — demo data (Brankas only offers payment APIs, not balance reads)
-  { id: 'bca',     name: 'BCA',     country: 'ID', currency: 'IDR', platform_type: 'bank_id', usesBrankas: false, logoUrl: '/logos/bca.svg',     mockBalanceRange: [1_000_000, 50_000_000] },
-  { id: 'mandiri', name: 'Mandiri', country: 'ID', currency: 'IDR', platform_type: 'bank_id', usesBrankas: false, logoUrl: '/logos/mandiri.svg', mockBalanceRange: [1_000_000, 50_000_000] },
-  { id: 'bri',     name: 'BRI',     country: 'ID', currency: 'IDR', platform_type: 'bank_id', usesBrankas: false, logoUrl: '/logos/bri.svg',     mockBalanceRange: [1_000_000, 50_000_000] },
-  { id: 'bni',     name: 'BNI',     country: 'ID', currency: 'IDR', platform_type: 'bank_id', usesBrankas: false, logoUrl: '/logos/bni.svg',     mockBalanceRange: [1_000_000, 50_000_000] },
+  { id: 'bca',     name: 'BCA',     country: 'ID', currency: 'IDR', platform_type: 'bank_id', usesBrankas: false, logoUrl: '/logos/bca.svg',     mockBalanceRange: [1_000, 50_000] },
+  { id: 'mandiri', name: 'Mandiri', country: 'ID', currency: 'IDR', platform_type: 'bank_id', usesBrankas: false, logoUrl: '/logos/mandiri.svg', mockBalanceRange: [1_000, 50_000] },
+  { id: 'bri',     name: 'BRI',     country: 'ID', currency: 'IDR', platform_type: 'bank_id', usesBrankas: false, logoUrl: '/logos/bri.svg',     mockBalanceRange: [1_000, 50_000] },
+  { id: 'bni',     name: 'BNI',     country: 'ID', currency: 'IDR', platform_type: 'bank_id', usesBrankas: false, logoUrl: '/logos/bni.svg',     mockBalanceRange: [1_000, 50_000] },
   // Indonesia e-wallets — mock (no public balance-read API available)
-  { id: 'gopay',     name: 'GoPay',     country: 'ID', currency: 'IDR', platform_type: 'ewallet_gopay',     usesBrankas: false, logoUrl: '/logos/gopay.svg',     mockBalanceRange: [50_000, 2_000_000] },
-  { id: 'shopeepay', name: 'ShopeePay', country: 'ID', currency: 'IDR', platform_type: 'ewallet_shopeepay', usesBrankas: false, logoUrl: '/logos/shopeepay.svg', mockBalanceRange: [50_000, 2_000_000] },
+  { id: 'gopay',     name: 'GoPay',     country: 'ID', currency: 'IDR', platform_type: 'ewallet_gopay',     usesBrankas: false, logoUrl: '/logos/gopay.svg',     mockBalanceRange: [5_000, 20_000] },
+  { id: 'shopeepay', name: 'ShopeePay', country: 'ID', currency: 'IDR', platform_type: 'ewallet_shopeepay', usesBrankas: false, logoUrl: '/logos/shopeepay.svg', mockBalanceRange: [5_000, 20_000] },
   // Singapore — mock (bank APIs require formal MAS/partnership registration)
-  { id: 'dbs',  name: 'DBS',  country: 'SG', currency: 'SGD', platform_type: 'bank_sg', usesBrankas: false, logoUrl: '/logos/dbs.svg',  mockBalanceRange: [1_000, 50_000] },
-  { id: 'ocbc', name: 'OCBC', country: 'SG', currency: 'SGD', platform_type: 'bank_sg', usesBrankas: false, logoUrl: '/logos/ocbc.svg', mockBalanceRange: [1_000, 50_000] },
-  { id: 'uob',  name: 'UOB',  country: 'SG', currency: 'SGD', platform_type: 'bank_sg', usesBrankas: false, logoUrl: '/logos/uob.svg',  mockBalanceRange: [1_000, 50_000] },
+  { id: 'dbs',  name: 'DBS',  country: 'SG', currency: 'SGD', platform_type: 'bank_sg', usesBrankas: false, logoUrl: '/logos/dbs.svg',  mockBalanceRange: [1_000, 5_000] },
+  { id: 'ocbc', name: 'OCBC', country: 'SG', currency: 'SGD', platform_type: 'bank_sg', usesBrankas: false, logoUrl: '/logos/ocbc.svg', mockBalanceRange: [1_000, 5_000] },
+  { id: 'uob',  name: 'UOB',  country: 'SG', currency: 'SGD', platform_type: 'bank_sg', usesBrankas: false, logoUrl: '/logos/uob.svg',  mockBalanceRange: [1_000, 5_000] },
   // Malaysia — mock (no open banking standard / public API)
   { id: 'maybank', name: 'Maybank', country: 'MY', currency: 'MYR', platform_type: 'bank_my', usesBrankas: false, logoUrl: '/logos/maybank.svg', mockBalanceRange: [500, 20_000] },
   { id: 'cimb',    name: 'CIMB',    country: 'MY', currency: 'MYR', platform_type: 'bank_my', usesBrankas: false, logoUrl: '/logos/cimb.svg',    mockBalanceRange: [500, 20_000] },
