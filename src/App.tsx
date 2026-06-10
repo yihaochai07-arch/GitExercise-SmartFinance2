@@ -12,6 +12,7 @@ import Accounts from './pages/Accounts';
 import Transactions from './pages/Transactions';
 import Goals from './pages/Goals';
 import Reports from './pages/Reports';
+import Budget from './pages/Budget';
 
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
             <Route path="transactions" element={<Transactions />} />
             <Route path="goals" element={<Goals />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="budgets" element={<Budget />} />
             <Route index element={<Navigate to="dashboard" />} />
           </Route>
 
