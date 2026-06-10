@@ -55,12 +55,13 @@ function MetricCard({ label, value, sub, valueColor, subColor }: MetricCardProps
   return (
     <div style={{
       backgroundColor: '#000',
-      borderRadius: '8px',
+      borderRadius: '14px',
       padding: '1rem',
       minWidth: 0,
+      minHeight: '104px',
     }}>
       <p style={{ fontSize: '12px', color: '#ccc', margin: '0 0 6px' }}>{label}</p>
-      <p style={{ fontSize: '22px', fontWeight: 500, margin: 0, color: valueColor ?? '#fff' }}>
+      <p style={{ fontSize: '22px', fontWeight: 600, margin: 0, color: valueColor ?? '#fff' }}>
         {value}
       </p>
       <p style={{ fontSize: '12px', margin: '4px 0 0', color: subColor ?? '#aaa' }}>{sub}</p>
@@ -78,6 +79,7 @@ export default function BudgetPage() {
   const [isSavingBudget, setIsSavingBudget] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
   const [saveMessageType, setSaveMessageType] = useState<'success' | 'error' | null>(null)
+  const [showManualBudget, setShowManualBudget] = useState(false)
 
   const { categories, loading: catLoading, error: catError } = useCategories()
   const { budgets, loading: budgetsLoading, error: budgetsError, saveBudget } = useBudgets()
@@ -222,9 +224,10 @@ export default function BudgetPage() {
     '#639922'
 
   const pageStyle: CSSProperties = {
-    maxWidth: '720px',
+    width: '100%',
+    maxWidth: '1200px',
     margin: '0 auto',
-    padding: '5rem 1rem 1.5rem 1rem',
+    padding: '2rem 1.5rem 1rem 1.5rem',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     color: '#1a1a1a',
   }
@@ -233,18 +236,23 @@ export default function BudgetPage() {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: '1rem',
+    marginBottom: '1.25rem',
   }
 
   const iconBtnStyle: CSSProperties = {
     background: 'none',
-    border: '0.5px solid rgba(0,0,0,0.2)',
-    borderRadius: '8px',
-    padding: '4px 10px',
+    border: '1px solid rgba(255,255,255,0.18)',
+    borderRadius: '12px',
+    padding: '10px 14px',
     cursor: 'pointer',
-    color: '#666',
+    color: '#fff',
     lineHeight: 1,
-    fontSize: '14px',
+    fontSize: '18px',
+    minWidth: '46px',
+    minHeight: '46px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   }
 
   if (loading) {
@@ -265,16 +273,16 @@ export default function BudgetPage() {
 
   return (
     <div style={pageStyle}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0, color: '#fff' }}>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, margin: 0, color: '#fff' }}>
             {MONTHS[viewMonth]} {viewYear}
           </h1>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button style={iconBtnStyle} onClick={() => changeMonth(-1)} aria-label="Previous month">‹</button>
-          <span style={{ fontSize: '13px', fontWeight: 500, minWidth: '100px', textAlign: 'center', color: '#fff' }}>
+          <span style={{ fontSize: '15px', fontWeight: 600, minWidth: '120px', textAlign: 'center', color: '#fff' }}>
             {MONTHS[viewMonth]} {viewYear}
           </span>
           <button style={iconBtnStyle} onClick={() => changeMonth(1)} aria-label="Next month">›</button>
@@ -283,9 +291,9 @@ export default function BudgetPage() {
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
         gap: '12px',
-        marginBottom: '1.5rem',
+        marginBottom: '1.25rem',
       }}>
         <MetricCard
           label="Total budget"
@@ -316,82 +324,98 @@ export default function BudgetPage() {
         backgroundColor: '#000',
         border: '0.5px solid rgba(255,255,255,0.12)',
         borderRadius: '18px',
-        padding: '1.25rem',
-        marginBottom: '1.5rem',
+        padding: '1rem',
+        marginBottom: '1rem',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem' }}>
-          <div>
-            <p style={{ fontSize: '13px', color: '#ccc', margin: '0 0 4px' }}>Manual budget setting</p>
-            <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: '#fff' }}>Set Your Own Budget</h2>
+        <button
+          type="button"
+          onClick={() => setShowManualBudget((prev) => !prev)}
+          style={{
+            width: 'auto',
+            borderRadius: '12px',
+            padding: '0.7rem 0.95rem',
+            border: '1px solid rgba(255,255,255,0.14)',
+            backgroundColor: '#111',
+            color: '#fff',
+            fontSize: '14px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          Set Your Own Budget
+        </button>
+        {showManualBudget ? (
+          <div style={{ display: 'grid', gap: '12px', marginTop: '1rem' }}>
+            <select
+              value={selectedCategoryId}
+              onChange={(event) => setSelectedCategoryId(event.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.9rem 1rem',
+                borderRadius: '12px',
+                border: '1px solid rgba(255,255,255,0.12)',
+                backgroundColor: '#111',
+                color: '#fff',
+                fontSize: '14px',
+              }}
+            >
+              {budgetCategories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            <input
+              type="number"
+              value={manualBudget}
+              onChange={(event) => setManualBudget(event.target.value)}
+              placeholder="Monthly budget amount"
+              style={{
+                width: '100%',
+                padding: '0.9rem 1rem',
+                borderRadius: '12px',
+                border: '1px solid rgba(255,255,255,0.12)',
+                backgroundColor: '#111',
+                color: '#fff',
+                fontSize: '14px',
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleSaveBudget}
+              disabled={isSavingBudget || !selectedCategoryId}
+              style={{
+                width: '100%',
+                padding: '0.95rem 1rem',
+                borderRadius: '12px',
+                border: 'none',
+                backgroundColor: '#22c55e',
+                color: '#fff',
+                fontSize: '14px',
+                fontWeight: 700,
+                cursor: isSavingBudget || !selectedCategoryId ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {isSavingBudget ? 'Saving…' : 'Save Budget'}
+            </button>
+            {saveMessage ? (
+              <p style={{ color: saveMessageType === 'error' ? '#f87171' : '#9be7ff', fontSize: '13px', margin: 0 }}>
+                {saveMessage}
+              </p>
+            ) : null}
           </div>
-        </div>
-        <div style={{ display: 'grid', gap: '12px' }}>
-          <select
-            value={selectedCategoryId}
-            onChange={(event) => setSelectedCategoryId(event.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.9rem 1rem',
-              borderRadius: '12px',
-              border: '1px solid rgba(255,255,255,0.12)',
-              backgroundColor: '#111',
-              color: '#fff',
-              fontSize: '14px',
-            }}
-          >
-            {budgetCategories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            value={manualBudget}
-            onChange={(event) => setManualBudget(event.target.value)}
-            placeholder="Monthly budget amount"
-            style={{
-              width: '100%',
-              padding: '0.9rem 1rem',
-              borderRadius: '12px',
-              border: '1px solid rgba(255,255,255,0.12)',
-              backgroundColor: '#111',
-              color: '#fff',
-              fontSize: '14px',
-            }}
-          />
-          <button
-            type="button"
-            onClick={handleSaveBudget}
-            disabled={isSavingBudget || !selectedCategoryId}
-            style={{
-              width: '100%',
-              padding: '0.95rem 1rem',
-              borderRadius: '12px',
-              border: 'none',
-              backgroundColor: '#22c55e',
-              color: '#fff',
-              fontSize: '14px',
-              fontWeight: 700,
-              cursor: isSavingBudget || !selectedCategoryId ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {isSavingBudget ? 'Saving…' : 'Save Budget'}
-          </button>
-          {saveMessage ? (
-            <p style={{ color: saveMessageType === 'error' ? '#f87171' : '#9be7ff', fontSize: '13px', margin: 0 }}>
-              {saveMessage}
-            </p>
-          ) : null}
-        </div>
+        ) : null}
       </div>
 
       <div style={{
         backgroundColor: '#000',
         border: '0.5px solid rgba(255,255,255,0.12)',
         borderRadius: '12px',
-        padding: '1rem 1.25rem',
-        marginBottom: '1.5rem',
+        padding: '0.9rem 1rem',
+        marginBottom: '1rem',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <span style={{ fontSize: '13px', color: '#ccc' }}>Overall Usage</span>
@@ -412,12 +436,12 @@ export default function BudgetPage() {
         </div>
       </div>
 
-      <div style={{ marginBottom: '1.5rem' }}>
+      <div style={{ marginBottom: '1rem' }}>
         <div style={sectionHeaderStyle}>
           <h2 style={{ fontSize: '16px', fontWeight: 500, margin: 0, color: '#fff' }}>Categories</h2>
           <span style={{ fontSize: '13px', color: '#fff' }}>{categories.length} categories</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
           {categoriesWithStats.map((category) => {
             const hasBudget = category.budgetLimit !== undefined
             return (

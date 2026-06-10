@@ -11,10 +11,25 @@ export default function Transactions() {
   const [filterAccountId, setFilterAccountId] = useState<string>('all')
   const [cashFlowAmount, setCashFlowAmount] = useState('')
   const [cashFlowCategoryId, setCashFlowCategoryId] = useState('')
-  const [cashFlowDate, setCashFlowDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const today = new Date()
+  const cashFlowYear = String(today.getFullYear())
+  const [cashFlowMonth, setCashFlowMonth] = useState(String(today.getMonth() + 1).padStart(2, '0'))
+  const [cashFlowDay, setCashFlowDay] = useState(String(today.getDate()).padStart(2, '0'))
+  const [cashFlowDate, setCashFlowDate] = useState(() => `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`)
   const [formMessage, setFormMessage] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [showCashFlowForm, setShowCashFlowForm] = useState(false)
+
+  useEffect(() => {
+    const daysInMonth = new Date(Number(cashFlowYear), Number(cashFlowMonth), 0).getDate()
+    if (Number(cashFlowDay) > daysInMonth) {
+      setCashFlowDay(String(daysInMonth).padStart(2, '0'))
+    }
+  }, [cashFlowMonth, cashFlowDay, cashFlowYear])
+
+  useEffect(() => {
+    setCashFlowDate(`${cashFlowYear}-${cashFlowMonth}-${cashFlowDay}`)
+  }, [cashFlowMonth, cashFlowDay, cashFlowYear])
 
   const cashFlowAccountId = filterAccountId !== 'all'
     ? filterAccountId
@@ -59,7 +74,9 @@ export default function Transactions() {
     if (newTransaction) {
       setFormMessage('Expense recorded successfully.')
       setCashFlowAmount('')
-      setCashFlowDate(new Date().toISOString().slice(0, 10))
+      const resetDate = new Date()
+      setCashFlowMonth(String(resetDate.getMonth() + 1).padStart(2, '0'))
+      setCashFlowDay(String(resetDate.getDate()).padStart(2, '0'))
       setTimeout(() => setShowCashFlowForm(false), 1500)
     } else {
       setFormError(error ?? 'Failed to record expense.')
@@ -174,12 +191,34 @@ export default function Transactions() {
                 </label>
                 <label className="space-y-2 text-sm text-white/70">
                   Date
-                  <input
-                    type="date"
-                    value={cashFlowDate}
-                    onChange={e => setCashFlowDate(e.target.value)}
-                    className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
-                  />
+                  <div className="grid grid-cols-3 gap-2">
+                    <select
+                      value={cashFlowDay}
+                      onChange={e => setCashFlowDay(e.target.value)}
+                      className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
+                    >
+                      {Array.from({ length: new Date(Number(cashFlowYear), Number(cashFlowMonth), 0).getDate() }, (_, i) => i + 1).map((day) => (
+                        <option key={day} value={String(day).padStart(2, '0')}>
+                          {String(day).padStart(2, '0')}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={cashFlowMonth}
+                      onChange={e => setCashFlowMonth(e.target.value)}
+                      className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
+                    >
+                      {[
+                        '01', '02', '03', '04', '05', '06',
+                        '07', '08', '09', '10', '11', '12',
+                      ].map((month) => (
+                        <option key={month} value={month}>{month}</option>
+                      ))}
+                    </select>
+                    <div className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white text-center">
+                      {cashFlowYear}
+                    </div>
+                  </div>
                 </label>
                 <label className="space-y-2 text-sm text-white/70">
                   Category
