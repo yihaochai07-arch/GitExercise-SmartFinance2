@@ -1,14 +1,68 @@
-import { useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { ArrowDownLeft, ArrowUpRight, LayoutList } from 'lucide-react'
 import { useTransactions } from '../hooks/useTransactions'
 import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
 
 export default function Transactions() {
-  const { transactions, totalIncome, totalExpense, loading, error } = useTransactions()
+  const { transactions, totalIncome, totalExpense, loading, error, addTransaction } = useTransactions()
   const { accounts } = useAccounts()
   const { categories } = useCategories()
   const [filterAccountId, setFilterAccountId] = useState<string>('all')
+  const [cashFlowAmount, setCashFlowAmount] = useState('')
+  const [cashFlowCategoryId, setCashFlowCategoryId] = useState('')
+  const [cashFlowDate, setCashFlowDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [formMessage, setFormMessage] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
+
+  const cashFlowAccountId = filterAccountId !== 'all'
+    ? filterAccountId
+    : accounts[0]?.id ?? ''
+
+  useEffect(() => {
+    if (!cashFlowCategoryId && categories.length > 0) {
+      setCashFlowCategoryId(categories[0].id)
+    }
+  }, [categories, cashFlowCategoryId])
+
+  async function handleAddCashFlow(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setFormMessage(null)
+    setFormError(null)
+
+    const amountValue = Math.abs(Number(cashFlowAmount))
+
+    if (!cashFlowCategoryId) {
+      setFormError('Please select a category.')
+      return
+    }
+
+    if (Number.isNaN(amountValue) || amountValue <= 0) {
+      setFormError('Please enter a valid cash flow amount.')
+      return
+    }
+
+    if (!cashFlowAccountId) {
+      setFormError('Please add an account before recording expenses by cash.')
+      return
+    }
+
+    const newTransaction = await addTransaction({
+      amount: amountValue,
+      type: 'expense',
+      category_id: cashFlowCategoryId,
+      account_id: cashFlowAccountId,
+      date: cashFlowDate,
+    })
+
+    if (newTransaction) {
+      setFormMessage('Expense recorded successfully.')
+      setCashFlowAmount('')
+      setCashFlowDate(new Date().toISOString().slice(0, 10))
+    } else {
+      setFormError(error ?? 'Failed to record expense.')
+    }
+  }
 
   const categoryMap = useMemo(
     () => Object.fromEntries(categories.map(c => [c.id, c])),
@@ -42,11 +96,11 @@ export default function Transactions() {
   }
 
   function formatAmount(amount: number, currency: string, type: 'income' | 'expense') {
-    const formatted = new Intl.NumberFormat('en-US', {
+    const formatted = new Intl.NumberFormat('en-MY', {
       style: 'currency',
       currency,
       maximumFractionDigits: currency === 'IDR' ? 0 : 2,
-    }).format(amount)
+    }).format(Math.abs(amount))
     return type === 'income' ? `+${formatted}` : `-${formatted}`
   }
 
@@ -79,6 +133,65 @@ export default function Transactions() {
           )}
         </div>
 
+        {/* Expenses by cash record form */}
+        <div className="mb-8 p-5 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-white">Expenses by Cash</h2>
+              <p className="text-sm text-white/40">Save a new cash expense to your account history.</p>
+            </div>
+          </div>
+          <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleAddCashFlow}>
+            <label className="space-y-2 text-sm text-white/70">
+              Amount
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={cashFlowAmount}
+                onChange={e => setCashFlowAmount(e.target.value)}
+                className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
+                placeholder="100.00"
+              />
+            </label>
+            <label className="space-y-2 text-sm text-white/70">
+              Date
+              <input
+                type="date"
+                value={cashFlowDate}
+                onChange={e => setCashFlowDate(e.target.value)}
+                className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
+              />
+            </label>
+            <label className="space-y-2 text-sm text-white/70">
+              Category
+              <select
+                value={cashFlowCategoryId}
+                onChange={e => setCashFlowCategoryId(e.target.value)}
+                className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
+              >
+                {categories.length === 0 ? (
+                  <option value="" disabled>No categories available</option>
+                ) : (
+                  categories.map(category => (
+                    <option key={category.id} value={category.id}>{category.name}</option>
+                  ))
+                )}
+              </select>
+            </label>
+            <div className="sm:col-span-2">
+              <button
+                type="submit"
+                className="w-full rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-400"
+              >
+                Save expense
+              </button>
+            </div>
+          </form>
+          {formError && <p className="mt-3 text-sm text-rose-400">{formError}</p>}
+          {formMessage && <p className="mt-3 text-sm text-emerald-400">{formMessage}</p>}
+        </div>
+
         {/* Summary */}
         {transactions.length > 0 && (
           <div className="grid grid-cols-2 gap-4 mb-10">
@@ -88,7 +201,7 @@ export default function Transactions() {
                 <p className="text-xs font-medium text-white/40 uppercase tracking-widest">Income</p>
               </div>
               <p className="text-xl font-bold text-emerald-400">
-                +{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalIncome)}
+                +{new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }).format(totalIncome)}
               </p>
             </div>
             <div className="p-5 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
@@ -97,7 +210,7 @@ export default function Transactions() {
                 <p className="text-xs font-medium text-white/40 uppercase tracking-widest">Expenses</p>
               </div>
               <p className="text-xl font-bold text-rose-400">
-                -{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalExpense)}
+                -{new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }).format(totalExpense)}
               </p>
             </div>
           </div>
@@ -142,7 +255,7 @@ export default function Transactions() {
               {txns.map(t => {
                 const category = categoryMap[t.category_id]
                 const account = accountMap[t.account_id]
-                const currency = account?.currency ?? 'USD'
+                const currency = account?.currency ?? 'MYR'
                 const isIncome = t.type === 'income'
                 return (
                   <div

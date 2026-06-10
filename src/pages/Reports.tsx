@@ -8,7 +8,7 @@ import html2canvas from 'html2canvas'
 
 export default function Reports() {
   const { transactions, loading: txLoading, error: txError } = useTransactions()
-  const { walletAccounts, totalBalanceMYR, loading: walletLoading, error: walletError } = useWallet() as any
+  const { totalBalanceMYR, groups, loading: walletLoading, error: walletError } = useWallet() as any
   const { categories } = useCategories()
   
   const [filterAccountId, setFilterAccountId] = useState<string>('all')
@@ -17,28 +17,36 @@ export default function Reports() {
   const loading = txLoading || walletLoading
   const error = txError || walletError
 
-  const accountsList = useMemo(() => {
-    return Array.isArray(walletAccounts) ? walletAccounts : []
-  }, [walletAccounts])
+  // Deeply flatten the structured accounts out of country groups based on your AccountCard schema
+  const detailedAccountsList = useMemo(() => {
+    if (!groups || !Array.isArray(groups)) return []
+    const flatList: any[] = []
+    groups.forEach((g: any) => {
+      if (g.accounts && Array.isArray(g.accounts)) {
+        g.accounts.forEach((acc: any) => {
+          flatList.push({
+            id: acc.id,
+            name: acc.provider?.name || acc.name || 'Unknown Account',
+            currency: acc.currency || g.currency || 'MYR',
+            displayBalance: acc.displayBalance || `${acc.currency || 'MYR'} 0.00`
+          })
+        })
+      }
+    })
+    return flatList
+  }, [groups])
 
   const primaryCurrency = useMemo(() => {
-    if (filterAccountId !== 'all' && accountsList.length > 0) {
-      const selectedAcc = accountsList.find(a => a.id === filterAccountId)
+    if (filterAccountId !== 'all' && detailedAccountsList.length > 0) {
+      const selectedAcc = detailedAccountsList.find(a => a.id === filterAccountId)
       return selectedAcc?.currency ?? 'MYR'
     }
     return 'MYR'
-  }, [filterAccountId, accountsList])
+  }, [filterAccountId, detailedAccountsList])
 
   const totalAssets = useMemo(() => {
-    if (filterAccountId === 'all') {
-      return totalBalanceMYR ?? 0
-    }
-    
-    const selectedAcc = accountsList.find(a => a.id === filterAccountId)
-    if (!selectedAcc) return 0
-    
-    return parseFloat(selectedAcc.balance || selectedAcc.current_balance || selectedAcc.amount || 0)
-  }, [filterAccountId, accountsList, totalBalanceMYR])
+    return totalBalanceMYR ?? 0
+  }, [totalBalanceMYR])
 
   const reportData = useMemo(() => {
     if (!transactions.length) return { salary: 0, salesExpenses: 0, totalIncome: 0, categoryBreakdown: {} }
@@ -80,6 +88,15 @@ export default function Reports() {
 
   const formatCurrency = (val: number) => {
     const symbol = primaryCurrency === 'MYR' ? 'RM' : primaryCurrency + ' '
+    const formattedNum = new Intl.NumberFormat('en-US', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    }).format(val)
+    return `${symbol}${formattedNum}`
+  }
+
+  const formatSpecificCurrency = (val: number, currencyCode: string) => {
+    const symbol = currencyCode === 'MYR' ? 'RM' : currencyCode + ' '
     const formattedNum = new Intl.NumberFormat('en-US', { 
       minimumFractionDigits: 2, 
       maximumFractionDigits: 2 
@@ -145,20 +162,20 @@ export default function Reports() {
           </div>
 
           <div className="flex items-center gap-3 self-start sm:self-auto">
-            {accountsList.length > 0 && (
+            {detailedAccountsList.length > 0 && (
               <select
                 value={filterAccountId}
                 onChange={e => setFilterAccountId(e.target.value)}
                 className="bg-[#0a0a0a] border border-white/[0.06] text-white/60 text-sm rounded-xl px-4 py-2 outline-none focus:border-white/[0.12] cursor-pointer transition-all"
               >
                 <option value="all">All accounts</option>
-                {accountsList.map(a => (
+                {detailedAccountsList.map(a => (
                   <option key={a.id} value={a.id}>{a.name}</option>
                 ))}
               </select>
             )}
 
-            {!loading && !error && accountsList?.length !== 0 && (
+            {!loading && !error && detailedAccountsList?.length !== 0 && (
               <button
                 onClick={exportToPDF}
                 disabled={isExporting}
@@ -189,36 +206,33 @@ export default function Reports() {
           <div id="report-pdf-content" className="space-y-6 p-4 rounded-2xl bg-[#050505]">
             
             <style>{`
+              .pdf-assignment-table {
+                display: none;
+              }
               .pdf-print-mode {
                 background-color: #ffffff !important;
                 color: #000000 !important;
+                padding: 30px !important;
               }
-              .pdf-print-mode .rounded-2xl {
-                background-color: #fcfcfc !important;
-                border-color: #e5e7eb !important;
+              .pdf-print-mode .dashboard-cards-view,
+              .pdf-print-mode .dashboard-breakdown-view {
+                display: none !important;
               }
-              .pdf-print-mode p, .pdf-print-mode h3, .pdf-print-mode span {
+              .pdf-print-mode .pdf-assignment-table {
+                display: block !important;
                 color: #111111 !important;
-              }
-              .pdf-print-mode text-white, .pdf-print-mode .text-white\\/80, .pdf-print-mode .text-white\\/60 {
-                color: #1f2937 !important;
-              }
-              .pdf-print-mode .text-white\\/40, .pdf-print-mode .text-white\\/30, .pdf-print-mode .text-white\\/20 {
-                color: #6b7280 !important;
-              }
-              .pdf-print-mode .bg-white\\/\\[0\\.02\\] {
-                background-color: #f3f4f6 !important;
-                border-color: #e5e7eb !important;
+                font-family: Arial, sans-serif;
               }
             `}</style>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <div className="dashboard-cards-view grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
                 <div className="flex items-center gap-2 mb-2">
                   <Wallet size={14} className="text-purple-400/70" />
                   <span className="text-xs font-medium text-white/40 uppercase tracking-widest">Total Assets</span>
                 </div>
-                <p className="text-2xl font-bold text-white tabular-nums">{formatCurrency(totalAssets)}</p>
+                <p className="text-2xl font-bold text-white tabular-nums">{formatSpecificCurrency(totalAssets, 'MYR')}</p>
                 <span className="text-[11px] text-white/20 mt-1 block">Live balance ({primaryCurrency})</span>
               </div>
 
@@ -241,7 +255,8 @@ export default function Reports() {
               </div>
             </div>
 
-            <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
+            
+            <div className="dashboard-breakdown-view p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
               <h3 className="text-sm font-semibold text-white/80 mb-5">Expense Breakdown (Last 3 Months)</h3>
               {Object.keys(reportData.categoryBreakdown).length === 0 ? (
                 <div className="text-center py-10">
@@ -270,6 +285,87 @@ export default function Reports() {
                 </div>
               )}
             </div>
+
+            
+            <div className="pdf-assignment-table w-full max-w-2xl mx-auto hidden">
+              <div className="border-b-2 border-black pb-3 text-center mb-8">
+                <h2 className="text-xl font-bold uppercase tracking-wider text-black">Statement of Financial Performance</h2>
+                <p className="text-xs text-gray-500 mt-1 font-mono">Generated on: {new Date().toLocaleDateString()}</p>
+              </div>
+
+              
+              <div className="mb-6">
+                <h3 className="text-sm font-bold uppercase border-b border-gray-400 pb-1 mb-2 text-black">ASSETS</h3>
+                <div className="space-y-1.5 pl-4">
+                  {filterAccountId === 'all' ? (
+                    detailedAccountsList.map(a => (
+                      <div key={a.id} className="flex justify-between text-sm font-mono text-gray-800">
+                        <span>{a.name}</span>
+                        <span>{a.displayBalance}</span>
+                      </div>
+                    ))
+                  ) : (
+                    (() => {
+                      const selected = detailedAccountsList.find(a => a.id === filterAccountId);
+                      if (!selected) return null;
+                      return (
+                        <div className="flex justify-between text-sm font-mono text-gray-800">
+                          <span>{selected.name}</span>
+                          <span>{selected.displayBalance}</span>
+                        </div>
+                      );
+                    })()
+                  )}
+                  <div className="flex justify-between text-sm font-bold border-t border-black pt-1 mt-1 font-mono text-black">
+                    <span>TOTAL ASSETS (MYR Valuation)</span>
+                    <span className="underline decoration-double">{formatSpecificCurrency(totalAssets, 'MYR')}</span>
+                  </div>
+                </div>
+              </div>
+
+              
+              <div className="mb-6">
+                <h3 className="text-sm font-bold uppercase border-b border-gray-400 pb-1 mb-2 text-black">LESS: EXPENSES (Rolling 3M)</h3>
+                <div className="space-y-1.5 pl-4">
+                  {Object.keys(reportData.categoryBreakdown).length === 0 ? (
+                    <div className="text-sm text-gray-400 italic pl-2">No expenses recorded</div>
+                  ) : (
+                    Object.entries(reportData.categoryBreakdown).map(([category, amount]) => (
+                      <div key={category} className="flex justify-between text-sm font-mono text-gray-800">
+                        <span>{category}</span>
+                        <span>{formatCurrency(amount)}</span>
+                      </div>
+                    ))
+                  )}
+                  <div className="flex justify-between text-sm font-bold border-t border-black pt-1 mt-1 font-mono text-black">
+                    <span>TOTAL EXPENSES</span>
+                    <span>({formatCurrency(reportData.salesExpenses)})</span>
+                  </div>
+                </div>
+              </div>
+
+              
+              <div className="mb-6">
+                <h3 className="text-sm font-bold uppercase border-b border-gray-400 pb-1 mb-2 text-black">INCOME</h3>
+                <div className="space-y-1.5 pl-4">
+                  <div className="flex justify-between text-sm font-mono text-gray-800">
+                    <span>3M Total Inflow / Earnings</span>
+                    <span>{formatCurrency(reportData.totalIncome)}</span>
+                  </div>
+                </div>
+              </div>
+
+
+              <div className="mt-8 border-t-2 border-b-2 border-black py-2">
+                <div className="flex justify-between text-base font-bold font-mono text-black">
+                  <span>NET BALANCED POSITION</span>
+                  <span className="underline decoration-double">
+                    {formatCurrency(reportData.totalIncome - reportData.salesExpenses)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
       </div>
