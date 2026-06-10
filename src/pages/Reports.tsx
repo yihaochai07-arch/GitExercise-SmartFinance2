@@ -12,6 +12,7 @@ export default function Reports() {
   const { categories } = useCategories()
   
   const [filterAccountId, setFilterAccountId] = useState<string>('all')
+  const [selectedMonthKey, setSelectedMonthKey] = useState<string>('all') 
   const [isExporting, setIsExporting] = useState(false)
 
   const loading = txLoading || walletLoading
@@ -19,9 +20,9 @@ export default function Reports() {
 
   const monthLabels = useMemo(() => {
     return [
-      { monthKey: '2026-06', displayLabel: 'June 2026', shortLabel: 'June' },
-      { monthKey: '2026-05', displayLabel: 'May 2026', shortLabel: 'May' },
-      { monthKey: '2026-04', displayLabel: 'April 2026', shortLabel: 'April' }
+      { monthKey: '2026-06', displayLabel: 'June 2026', shortLabel: 'June', periodLabel: 'This Month' },
+      { monthKey: '2026-05', displayLabel: 'May 2026', shortLabel: 'May', periodLabel: 'Last Month' },
+      { monthKey: '2026-04', displayLabel: 'April 2026', shortLabel: 'April', periodLabel: 'Month Before Last' }
     ]
   }, [])
 
@@ -64,14 +65,20 @@ export default function Reports() {
       '2026-04': defaultMonthData(),
     }
 
-    let totalIncome3M = 0
-    let totalExpense3M = 0
-    const breakdown3M: Record<string, number> = {}
-    const incomeBreakdown3M: Record<string, number> = {}
+    let fullIncome3M = 0
+    let fullExpense3M = 0
+    const fullCategoryBreakdown: Record<string, number> = {}
+    const fullIncomeBreakdown: Record<string, number> = {}
+
+    let uiIncome = 0
+    let uiExpense = 0
+    const uiCategoryBreakdown: Record<string, number> = {}
 
     monthLabels.forEach(m => {
-      incomeBreakdown3M[m.shortLabel] = 0
+      fullIncomeBreakdown[m.shortLabel] = 0
     })
+
+    const targetMonths = monthLabels.map(m => m.monthKey)
 
     transactions.forEach(t => {
       if (filterAccountId !== 'all' && t.account_id !== filterAccountId) return
@@ -80,30 +87,47 @@ export default function Reports() {
       const txnMonthKey = `${txnDate.getFullYear()}-${String(txnDate.getMonth() + 1).padStart(2, '0')}`
       const amount = Number(t.amount) || 0
 
-      if (monthlyStats[txnMonthKey] !== undefined) {
+      if (targetMonths.includes(txnMonthKey)) {
         const currentMonthLabel = monthLabels.find(m => m.monthKey === txnMonthKey)?.shortLabel || 'Other'
+        
+        if (monthlyStats[txnMonthKey]) {
+          if (t.type === 'income') monthlyStats[txnMonthKey].income += amount
+          if (t.type === 'expense') monthlyStats[txnMonthKey].expense += amount
+        }
+
         if (t.type === 'income') {
-          monthlyStats[txnMonthKey].income += amount
-          totalIncome3M += amount
-          incomeBreakdown3M[currentMonthLabel] = (incomeBreakdown3M[currentMonthLabel] || 0) + amount
+          fullIncome3M += amount
+          fullIncomeBreakdown[currentMonthLabel] += amount
         } else if (t.type === 'expense') {
-          monthlyStats[txnMonthKey].expense += amount
-          totalExpense3M += amount
-          
+          fullExpense3M += amount
           const catName = categories.find(c => c.id === t.category_id)?.name ?? 'Other'
-          breakdown3M[catName] = (breakdown3M[catName] || 0) + amount
+          fullCategoryBreakdown[catName] = (fullCategoryBreakdown[catName] || 0) + amount
+        }
+
+        const isMatchesTab = selectedMonthKey === 'all' || selectedMonthKey === txnMonthKey
+        if (isMatchesTab) {
+          if (t.type === 'income') {
+            uiIncome += amount
+          } else if (t.type === 'expense') {
+            uiExpense += amount
+            const catName = categories.find(c => c.id === t.category_id)?.name ?? 'Other'
+            uiCategoryBreakdown[catName] = (uiCategoryBreakdown[catName] || 0) + amount
+          }
         }
       }
     })
 
     return { 
       monthlyStats, 
-      totalIncome: totalIncome3M, 
-      salesExpenses: totalExpense3M, 
-      categoryBreakdown: breakdown3M,
-      incomeBreakdown: incomeBreakdown3M
+      uiIncome,
+      uiExpense,
+      uiCategoryBreakdown,
+      fullIncome3M, 
+      fullExpense3M, 
+      fullCategoryBreakdown,
+      fullIncomeBreakdown
     }
-  }, [transactions, filterAccountId, categories, monthLabels])
+  }, [transactions, filterAccountId, categories, monthLabels, selectedMonthKey])
 
   const formatCurrency = (val: number) => {
     const symbol = primaryCurrency === 'MYR' ? 'RM' : primaryCurrency + ' '
@@ -246,72 +270,112 @@ export default function Reports() {
               <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
                 <div className="flex items-center gap-2 mb-2">
                   <ArrowUpRight size={14} className="text-emerald-400/70" />
-                  <span className="text-xs font-medium text-white/40 uppercase tracking-widest">3M Total Income</span>
+                  <span className="text-xs font-medium text-white/40 uppercase tracking-widest">
+                    {selectedMonthKey === 'all' ? '3M Total Income' : 'Selected Month Income'}
+                  </span>
                 </div>
-                <p className="text-2xl font-bold text-emerald-400 tabular-nums">{formatCurrency(reportData.totalIncome)}</p>
-                <span className="text-[11px] text-white/20 mt-1 block">Accumulated inflow</span>
+                <p className="text-2xl font-bold text-emerald-400 tabular-nums">{formatCurrency(reportData.uiIncome)}</p>
+                <span className="text-[11px] text-white/20 mt-1 block">
+                  {selectedMonthKey === 'all' ? 'Accumulated inflow' : 'Filtered context'}
+                </span>
               </div>
 
               <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
                 <div className="flex items-center gap-2 mb-2">
                   <ArrowDownRight size={14} className="text-rose-400/70" />
-                  <span className="text-xs font-medium text-white/40 uppercase tracking-widest">3M Expenses</span>
+                  <span className="text-xs font-medium text-white/40 uppercase tracking-widest">
+                    {selectedMonthKey === 'all' ? '3M Expenses' : 'Selected Month Expenses'}
+                  </span>
                 </div>
-                <p className="text-2xl font-bold text-rose-400 tabular-nums">{formatCurrency(reportData.salesExpenses)}</p>
-                <span className="text-[11px] text-white/20 mt-1 block">Accumulated outflow</span>
+                <p className="text-2xl font-bold text-rose-400 tabular-nums">{formatCurrency(reportData.uiExpense)}</p>
+                <span className="text-[11px] text-white/20 mt-1 block">
+                  {selectedMonthKey === 'all' ? 'Accumulated outflow' : 'Filtered context'}
+                </span>
               </div>
             </div>
 
-            <div className="dashboard-monthly-breakdown grid grid-cols-1 md:grid-cols-3 gap-4">
-              {monthLabels.map((m, index) => {
-                const data = reportData.monthlyStats[m.monthKey] || { income: 0, expense: 0 }
-                const netStatus = data.income - data.expense
-                const periodLabel = index === 0 ? 'This Month' : index === 1 ? 'Last Month' : 'Month Before Last'
+            <div className="dashboard-monthly-breakdown space-y-3">
+              <div className="flex justify-between items-center px-1">
+                <span className="text-xs font-medium text-white/30 uppercase tracking-wider">Filter by Statement Period</span>
+                {selectedMonthKey !== 'all' && (
+                  <button 
+                    onClick={() => setSelectedMonthKey('all')}
+                    className="text-[11px] text-pink-400 hover:underline bg-pink-500/5 px-2 py-0.5 rounded border border-pink-500/10"
+                  >
+                    Clear Filter (Show All 3M)
+                  </button>
+                )}
+              </div>
 
-                return (
-                  <div key={m.monthKey} className="p-5 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] relative overflow-hidden">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <span className="text-[10px] font-bold tracking-wider uppercase text-pink-400/80 bg-pink-500/5 border border-pink-500/10 px-2 py-0.5 rounded-full">
-                          {periodLabel}
-                        </span>
-                        <h4 className="text-sm font-semibold text-white/80 mt-1.5">{m.displayLabel}</h4>
-                      </div>
-                      <Calendar size={16} className="text-white/10" />
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {monthLabels.map((m) => {
+                  const data = reportData.monthlyStats[m.monthKey] || { income: 0, expense: 0 }
+                  const netStatus = data.income - data.expense
+                  const isSelected = selectedMonthKey === m.monthKey
 
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-white/40">Inflow:</span>
-                        <span className="text-emerald-400 font-medium">{formatCurrency(data.income)}</span>
+                  return (
+                    <button
+                      key={m.monthKey}
+                      onClick={() => setSelectedMonthKey(m.monthKey)}
+                      className={`text-left p-5 rounded-2xl border transition-all duration-200 outline-none relative overflow-hidden ${
+                        isSelected 
+                          ? 'bg-pink-500/[0.03] border-pink-500/40 shadow-lg shadow-pink-500/[0.02]' 
+                          : 'bg-[#0a0a0a] border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.01]'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full border ${
+                            isSelected 
+                              ? 'text-pink-400 bg-pink-500/10 border-pink-500/20' 
+                              : 'text-white/40 bg-white/[0.02] border-white/[0.04]'
+                          }`}>
+                            {m.periodLabel}
+                          </span>
+                          <h4 className="text-sm font-semibold text-white/80 mt-1.5">{m.displayLabel}</h4>
+                        </div>
+                        <Calendar size={16} className={isSelected ? 'text-pink-400/40' : 'text-white/10'} />
                       </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-white/40">Outflow:</span>
-                        <span className="text-rose-400 font-medium">{formatCurrency(data.expense)}</span>
+
+                      <div className="space-y-2 pointer-events-none">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-white/40">Inflow:</span>
+                          <span className="text-emerald-400 font-medium">{formatCurrency(data.income)}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-white/40">Outflow:</span>
+                          <span className="text-rose-400 font-medium">{formatCurrency(data.expense)}</span>
+                        </div>
+                        <div className="pt-2 border-t border-white/[0.04] flex justify-between text-xs font-semibold">
+                          <span className="text-white/60">Net Balance:</span>
+                          <span className={netStatus >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                            {netStatus >= 0 ? '+' : ''}{formatCurrency(netStatus)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="pt-2 border-t border-white/[0.04] flex justify-between text-xs font-semibold">
-                        <span className="text-white/60">Net:</span>
-                        <span className={netStatus >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                          {netStatus >= 0 ? '+' : ''}{formatCurrency(netStatus)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
             <div className="dashboard-category-view p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
-              <h3 className="text-sm font-semibold text-white/80 mb-5">Expense Breakdown by Category</h3>
-              {Object.keys(reportData.categoryBreakdown).length === 0 ? (
+              <div className="flex justify-between items-center mb-5">
+                <h3 className="text-sm font-semibold text-white/80">Expense Breakdown by Category</h3>
+                <span className="text-[11px] font-mono text-white/20">
+                  {selectedMonthKey === 'all' ? 'Context: Full 3 Months' : `Context: Only ${monthLabels.find(m => m.monthKey === selectedMonthKey)?.shortLabel}`}
+                </span>
+              </div>
+
+              {Object.keys(reportData.uiCategoryBreakdown).length === 0 ? (
                 <div className="text-center py-10">
                   <BarChart3 size={32} className="mx-auto text-white/10 mb-2" />
-                  <p className="text-xs text-white/30">No categorical outflow recorded in this period</p>
+                  <p className="text-xs text-white/30">No categorical outflows recorded for this selected context</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {Object.entries(reportData.categoryBreakdown).map(([category, amount]) => {
-                    const sharePercentage = reportData.salesExpenses > 0 ? (amount / reportData.salesExpenses) * 100 : 0
+                  {Object.entries(reportData.uiCategoryBreakdown).map(([category, amount]) => {
+                    const sharePercentage = reportData.uiExpense > 0 ? (amount / reportData.uiExpense) * 100 : 0
                     return (
                       <div key={category} className="space-y-1.5">
                         <div className="flex justify-between text-xs font-medium">
@@ -370,10 +434,10 @@ export default function Reports() {
               <div className="mb-5">
                 <h3 className="text-xs font-bold uppercase border-b border-black pb-1 mb-2 text-black">LESS: EXPENSES (ROLLING 3M)</h3>
                 <div className="space-y-1 pl-1">
-                  {Object.keys(reportData.categoryBreakdown).length === 0 ? (
+                  {Object.keys(reportData.fullCategoryBreakdown).length === 0 ? (
                     <div className="text-xs text-black italic pl-1">No data available</div>
                   ) : (
-                    Object.entries(reportData.categoryBreakdown).map(([category, amount]) => (
+                    Object.entries(reportData.fullCategoryBreakdown).map(([category, amount]) => (
                       <div key={category} className="flex justify-between text-xs font-mono text-black">
                         <span>{category}</span>
                         <span>{formatCurrency(amount)}</span>
@@ -382,7 +446,7 @@ export default function Reports() {
                   )}
                   <div className="flex justify-between text-xs font-bold border-t border-black pt-1 mt-1 font-mono text-black">
                     <span>TOTAL EXPENSES</span>
-                    <span>({formatCurrency(reportData.salesExpenses)})</span>
+                    <span>({formatCurrency(reportData.fullExpense3M)})</span>
                   </div>
                 </div>
               </div>
@@ -391,7 +455,7 @@ export default function Reports() {
                 <h3 className="text-xs font-bold uppercase border-b border-black pb-1 mb-2 text-black">INCOME</h3>
                 <div className="space-y-1 pl-1 mb-2">
                   {monthLabels.slice().reverse().map(m => {
-                    const monthIncome = reportData.incomeBreakdown[m.shortLabel] || 0
+                    const monthIncome = reportData.fullIncomeBreakdown[m.shortLabel] || 0
                     return (
                       <div key={m.monthKey} className="flex justify-between text-xs font-mono text-black pl-3 italic">
                         <span>— {m.shortLabel} Earnings</span>
@@ -403,7 +467,7 @@ export default function Reports() {
                 <div className="space-y-1 pl-1">
                   <div className="flex justify-between text-xs font-mono text-black border-t border-gray-300 pt-1">
                     <span>3M Total Inflow / Earnings</span>
-                    <span>{formatCurrency(reportData.totalIncome)}</span>
+                    <span>{formatCurrency(reportData.fullIncome3M)}</span>
                   </div>
                 </div>
               </div>
@@ -412,7 +476,7 @@ export default function Reports() {
                 <div className="flex justify-between text-sm font-bold font-mono text-black">
                   <span>NET BALANCED POSITION</span>
                   <span className="underline decoration-double">
-                    {formatCurrency(reportData.totalIncome - reportData.salesExpenses)}
+                    {formatCurrency(reportData.fullIncome3M - reportData.fullExpense3M)}
                   </span>
                 </div>
               </div>
