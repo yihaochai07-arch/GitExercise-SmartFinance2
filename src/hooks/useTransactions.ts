@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 
 export type Transaction = {
     id: string
-    user_id: string          // ← keep only ONE user_id (you had it duplicated)
+    user_id: string          
     amount: number
     type: 'income' | 'expense'
     category_id: string

@@ -1,4 +1,4 @@
-/**
+  /**
  * Generates realistic mock transaction history for a connected account.
  * Seeded by accountId so the same account always gets the same transactions.
  * Dynamically generates up to the current date.
@@ -59,7 +59,7 @@ const EXPENSE_RANGES: Record<string, Record<string, AmountRange>> = {
   IDR: {
     'Food & Dining':  [1_000, 8_000],
     'Transport':      [1_000, 15_000],
-    'Shopping':       [5_000, 6_000],
+    'Shopping':       [5_000, 60_000],
     'Entertainment':  [3_000, 20_000],
     'Health':         [5_000, 35_000],
     'Utilities':      [1_000, 50_000],
@@ -73,7 +73,6 @@ const INCOME_RANGES: Record<string, AmountRange> = {
   IDR: [60_000, 180_000],
 }
 
-// E-wallet income is top-ups (smaller)
 const TOPUP_RANGES: Record<string, AmountRange> = {
   SGD: [20, 200],
   MYR: [20, 200],
@@ -105,7 +104,6 @@ export function generateMockTransactions(
   const salaryCategory = categories.find(c => c.name === 'Salary') ?? categories[0]
   const expenseCategories = categories.filter(c => EXPENSE_CATEGORY_NAMES.includes(c.name))
 
-  // Build date range: from (monthsBack months ago) to today
   const today = new Date()
   const start = new Date(today)
   start.setMonth(start.getMonth() - monthsBack)
@@ -117,7 +115,6 @@ export function generateMockTransactions(
     const dateStr = currentDate.toISOString().split('T')[0]
     const dayOfMonth = currentDate.getDate()
 
-    // Income: salary on day 1 and 15 (or top-up for e-wallets with ~30% chance)
     if (isEwallet) {
       if (rng.next() < 0.12) {
         transactions.push({
@@ -142,7 +139,6 @@ export function generateMockTransactions(
       }
     }
 
-    // Expenses: 0–3 per day with ~60% chance of any expense
     const expenseCount = rng.next() < 0.6 ? rng.nextInt(1, 3) : 0
     for (let i = 0; i < expenseCount; i++) {
       const cat = rng.pick(expenseCategories)

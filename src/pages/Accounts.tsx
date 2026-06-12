@@ -5,7 +5,7 @@ import CountryGroup from '../components/accounts/CountryGroup'
 import ConnectModal from '../components/accounts/ConnectModal'
 
 export default function Accounts() {
-  const { groups, walletAccounts, totalBalanceMYR, loading, error, connectAccount } = useWallet()
+  const { groups, walletAccounts, totalBalanceMYR, loading, error, connectAccount, deleteAccount } = useWallet()
   const [modalOpen, setModalOpen] = useState(false)
 
   const connectedProviderIds = new Set(walletAccounts.map(a => a.provider.id))
@@ -88,7 +88,7 @@ export default function Accounts() {
 
         {/* Country groups */}
         {!loading && groups.map(group => (
-          <CountryGroup key={group.country} group={group} />
+          <CountryGroup key={group.country} group={group} onDelete={deleteAccount}/>
         ))}
 
         {/* Empty state */}

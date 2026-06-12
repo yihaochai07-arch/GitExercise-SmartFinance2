@@ -8,6 +8,7 @@ type UseAccountsReturn = {
     loading: boolean
     error: string | null
     addAccount: (account: Omit<Account, 'id' | 'created_at' | 'user_id'>) => Promise<Account | null>
+    deleteAccount: (accountID: string) => Promise<boolean>
     refetch: () => Promise<void>
 }
 
@@ -57,7 +58,27 @@ export function useAccounts(): UseAccountsReturn {
         }
     }
 
+    async function deleteAccount(accountId: string): Promise<boolean> {
+    if (!user) return false
+    try {
+        const { error: accError } = await supabase
+            .from('accounts')
+            .delete()
+            .eq('id', accountId)
+            .eq('user_id', user.id)   // safety: only delete own account
+
+        if (accError) throw accError
+
+        // Update local state immediately
+        setAccounts(prev => prev.filter(a => a.id !== accountId))
+        return true
+    } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to delete account')
+        return false
+    }
+}
+
     const totalBalance = accounts.reduce((sum, acc) => sum + acc.opening_balance, 0)
 
-    return { accounts, totalBalance, loading, error, addAccount, refetch: fetchAccounts }
+    return { accounts, totalBalance, loading, error, addAccount, deleteAccount,refetch: fetchAccounts }
 }
