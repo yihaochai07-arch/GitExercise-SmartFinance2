@@ -46,6 +46,11 @@ export const PROVIDER_MAP: Record<string, ProviderConfig> = Object.fromEntries(
   PROVIDERS.map(p => [p.id, p])
 )
 
+export const PROVIDER_BY_NAME: Record<string, ProviderConfig> = Object.fromEntries(
+  PROVIDERS.map(p => [p.name.toLowerCase(), p])
+)
+
+
 /**
  * Returns a stable, deterministic mock balance seeded by accountId.
  * Uses accountId instead of Math.random() so the value doesn't change on re-render.

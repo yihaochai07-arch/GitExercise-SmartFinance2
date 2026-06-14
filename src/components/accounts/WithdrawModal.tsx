@@ -15,6 +15,8 @@ export default function WithdrawModal({ open, accounts, onClose, onWithdraw }: P
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+
   if (!open) return null
 
   // Only show bank accounts as source (not cash itself, not ewallets)
@@ -79,22 +81,68 @@ export default function WithdrawModal({ open, accounts, onClose, onWithdraw }: P
 
             {/* Source account dropdown */}
             <div>
-              <label className="block text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-                Source Account
-              </label>
-              <select
-                value={sourceId}
-                onChange={e => setSourceId(e.target.value)}
-                className="w-full bg-white/[0.03] border border-white/[0.08] text-white/70 text-sm rounded-xl px-3 py-2.5 outline-none focus:border-pink-500/40 transition-colors cursor-pointer"
-              >
-                <option value="" disabled>Select a bank account</option>
-                {bankAccounts.map(a => (
-                  <option key={a.id} value={a.id}>
-                    {a.provider.name} — {a.displayBalance}
-                  </option>
-                ))}
-              </select>
-            </div>
+  <label className="block text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
+    Source Account
+  </label>
+  <div className="relative">
+    {/* Trigger button */}
+    <button
+      type="button"
+      onClick={() => setDropdownOpen(prev => !prev)}
+      className="w-full bg-white/[0.03] border border-white/[0.08] text-sm rounded-xl px-3 py-2.5 outline-none focus:border-pink-500/40 transition-colors flex items-center justify-between"
+    >
+      <span className={sourceId ? 'text-white/80' : 'text-white/25'}>
+        {sourceId
+          ? (() => {
+              const a = bankAccounts.find(a => a.id === sourceId)
+              return a ? `${a.provider.name} — ${a.displayBalance}` : 'Select a bank account'
+            })()
+          : 'Select a bank account'
+        }
+      </span>
+      <svg
+        className={`w-4 h-4 text-white/30 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}
+        fill="none" viewBox="0 0 24 24" stroke="currentColor"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+
+    {/* Options list — fully visible, no scroll */}
+    {dropdownOpen && (
+      <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#141414] border border-white/[0.08] rounded-xl overflow-hidden z-10 shadow-2xl">
+        {bankAccounts.length === 0 ? (
+          <p className="px-4 py-3 text-sm text-white/30">No bank accounts connected</p>
+        ) : (
+          bankAccounts.map(a => (
+            <button
+              key={a.id}
+              type="button"
+              onClick={() => {
+                setSourceId(a.id)
+                setDropdownOpen(false)
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-sm transition-colors hover:bg-white/[0.05] ${
+                sourceId === a.id ? 'text-pink-400 bg-pink-500/5' : 'text-white/70'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <img
+                  src={a.provider.logoUrl}
+                  alt={a.provider.name}
+                  className="w-5 h-5 object-contain"
+                  onError={(e) => { e.currentTarget.style.display = 'none' }}
+                />
+                <span>{a.provider.name}</span>
+              </div>
+              <span className="text-white/40 text-xs font-medium">{a.displayBalance}</span>
+            </button>
+          ))
+        )}
+      </div>
+    )}
+  </div>
+</div>
 
             {/* Amount input */}
             <div>
