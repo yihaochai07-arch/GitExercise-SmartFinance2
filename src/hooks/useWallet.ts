@@ -134,6 +134,67 @@ export function useWallet() {
     await refetch()
   }, [addAccount, refetch, user])
 
+  const getOrCreateCashAccount = useCallback(async (): Promise<string | null> => {
+  // Check if cash account already exists
+  const existing = walletAccounts.find(a => a.platform_type === 'cash')
+  if (existing) return existing.id
+
+  // Create it if it doesn't exist
+  const account = await addAccount({
+    name: 'Cash on Hand',
+    platform_type: 'cash',
+    opening_balance: 0,
+    currency: 'MYR',
+    brankas_account_id: null,
+  })
+  return account?.id ?? null
+}, [walletAccounts, addAccount])
+
+const withdrawCash = useCallback(async (
+  sourceAccountId: string,
+  amount: number,
+): Promise<void> => {
+  if (!user) throw new Error('Not authenticated')
+  if (amount <= 0) throw new Error('Amount must be greater than 0')
+
+  // Step 1 — get or create cash account
+  const cashAccountId = await getOrCreateCashAccount()
+  if (!cashAccountId) throw new Error('Failed to create cash account')
+
+  // Step 2 — find source account currency
+  const sourceAccount = walletAccounts.find(a => a.id === sourceAccountId)
+  if (!sourceAccount) throw new Error('Source account not found')
+
+  // Step 3 — insert expense on source bank account
+  const { error: expenseError } = await supabase
+    .from('transactions')
+    .insert({
+      user_id: user.id,
+      account_id: sourceAccountId,
+      amount,
+      type: 'expense',
+      category_id: null,   // no category for transfers
+      date: new Date().toISOString().split('T')[0],
+    })
+  if (expenseError) throw expenseError
+
+  // Step 4 — insert income on cash account
+  const { error: incomeError } = await supabase
+    .from('transactions')
+    .insert({
+      user_id: user.id,
+      account_id: cashAccountId,
+      amount,
+      type: 'income',
+      category_id: null,
+      date: new Date().toISOString().split('T')[0],
+    })
+  if (incomeError) throw incomeError
+
+  // Step 5 — refresh accounts to reflect new balances
+  await refetch()
+}, [user, walletAccounts, getOrCreateCashAccount, supabase, refetch])
+
   return {
     groups,
     walletAccounts,
@@ -142,5 +203,6 @@ export function useWallet() {
     error: accountsError,
     connectAccount,
     deleteAccount,
+    withdrawCash, 
   }
 }

@@ -13,6 +13,16 @@ export type ProviderConfig = {
 }
 
 export const PROVIDERS: ProviderConfig[] = [
+  { 
+  id: 'cash', 
+  name: 'Cash on Hand', 
+  country: 'MY',           // default country — doesn't matter much
+  currency: 'MYR',         // cash is always in local currency
+  platform_type: 'cash', 
+  usesBrankas: false, 
+  logoUrl: '/logos/cash.svg',  // we'll use an emoji fallback 
+  mockBalanceRange: [0, 0],    // cash starts at 0, real balance from transactions
+},
   // Indonesia — demo data (Brankas only offers payment APIs, not balance reads)
   { id: 'bca',     name: 'BCA',     country: 'ID', currency: 'IDR', platform_type: 'bank_id', usesBrankas: false, logoUrl: '/logos/bca.svg',     mockBalanceRange: [10_000, 500_000] },
   { id: 'mandiri', name: 'Mandiri', country: 'ID', currency: 'IDR', platform_type: 'bank_id', usesBrankas: false, logoUrl: '/logos/mandiri.svg', mockBalanceRange: [10_000, 500_000] },
