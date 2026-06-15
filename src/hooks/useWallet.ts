@@ -72,7 +72,7 @@ async function seedTransactions(
 
 export function useWallet() {
   const { user } = useAuth()
-  const { accounts, loading: accountsLoading, error: accountsError, addAccount, refetch } = useAccounts()
+  const { accounts, loading: accountsLoading, error: accountsError, addAccount, deleteAccount,refetch } = useAccounts()
   // Enrich each account with provider config + mock balance
   const walletAccounts: WalletAccount[] = accounts.map(account => {
     const provider = Object.values(PROVIDER_MAP).find(p => p.name.toLowerCase() === account.name.toLowerCase())
@@ -141,5 +141,6 @@ export function useWallet() {
     loading: accountsLoading,
     error: accountsError,
     connectAccount,
+    deleteAccount,
   }
 }
