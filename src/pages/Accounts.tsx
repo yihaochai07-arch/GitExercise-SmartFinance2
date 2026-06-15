@@ -1,12 +1,14 @@
 import { useState } from 'react'
-import { Plus, Wallet2, TrendingUp } from 'lucide-react'
+import { Plus, Wallet2, TrendingUp, Banknote } from 'lucide-react' 
 import { useWallet } from '../hooks/useWallet'
 import CountryGroup from '../components/accounts/CountryGroup'
 import ConnectModal from '../components/accounts/ConnectModal'
+import WithdrawModal from '../components/accounts/WithdrawModal'
 
 export default function Accounts() {
-  const { groups, walletAccounts, totalBalanceMYR, loading, error, connectAccount, deleteAccount } = useWallet()
+  const { groups, walletAccounts, totalBalanceMYR, loading, error, connectAccount, deleteAccount, withdrawCash } = useWallet()
   const [modalOpen, setModalOpen] = useState(false)
+  const [withdrawOpen, setWithdrawOpen] = useState(false) 
 
   const connectedProviderIds = new Set(walletAccounts.map(a => a.provider.id))
 
@@ -27,13 +29,23 @@ export default function Accounts() {
               Your connected banks and e-wallets
             </p>
           </div>
-          <button
-            onClick={() => setModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-pink-500/10 border border-pink-500/20 hover:border-pink-500/50 hover:bg-pink-500/15 text-pink-400 text-sm font-medium transition-all duration-200"
-          >
-            <Plus size={15} />
-            Connect Account
-          </button>
+          
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setWithdrawOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.14] text-white/60 hover:text-white/80 text-sm font-medium transition-all duration-200"
+            >
+              <Banknote size={15} />
+              Withdraw Cash
+            </button>
+            <button
+              onClick={() => setModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-pink-500/10 border border-pink-500/20 hover:border-pink-500/50 hover:bg-pink-500/15 text-pink-400 text-sm font-medium transition-all duration-200"
+            >
+              <Plus size={15} />
+              Connect Account
+            </button>
+          </div>
         </div>
 
         {/* Total balance banner */}
@@ -118,6 +130,13 @@ export default function Accounts() {
         connectedProviderIds={connectedProviderIds}
         onClose={() => setModalOpen(false)}
         onConnect={connectAccount}
+      />
+
+      <WithdrawModal
+        open={withdrawOpen}
+        accounts={walletAccounts}
+        onClose={() => setWithdrawOpen(false)}
+        onWithdraw={withdrawCash}
       />
     </div>
   )
