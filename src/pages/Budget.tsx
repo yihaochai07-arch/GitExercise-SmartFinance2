@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect, type CSSProperties } from 'react'
 import { useCategories } from '../hooks/useCategories'
 import { useBudgets, type Budget } from '../hooks/useBudgets'
-
 import { useTransactions } from '../hooks/useTransactions'
 
 const MONTHS = [
@@ -68,7 +67,6 @@ function MetricCard({ label, value, sub, valueColor, subColor }: MetricCardProps
     </div>
   )
 }
-
 
 export default function BudgetPage() {
   const today = new Date()
@@ -205,13 +203,18 @@ export default function BudgetPage() {
     setSaveMessage(`Budget saved successfully for ${categoryName}.`)
   }
 
+  // FIX 1: changeMonth no longer skips years
   const changeMonth = (dir: 1 | -1) => {
-    setViewMonth((prev) => {
-      let next = prev + dir
-      if (next > 11) { setViewYear((year) => year + 1); return 0 }
-      if (next < 0) { setViewYear((year) => year - 1); return 11 }
-      return next
-    })
+    const next = viewMonth + dir
+    if (next > 11) {
+      setViewMonth(0)
+      setViewYear((year) => year + 1)
+    } else if (next < 0) {
+      setViewMonth(11)
+      setViewYear((year) => year - 1)
+    } else {
+      setViewMonth(next)
+    }
   }
 
   const isCurrentMonth = viewMonth === today.getMonth() && viewYear === today.getFullYear()
@@ -431,11 +434,12 @@ export default function BudgetPage() {
           }} />
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
-          <span style={{ fontSize: '11px', color: '#aaa' }}>RM 0.00</span>
+          <span style={{ fontSize: '11px', color: '#aaa' }}>{formatCurrency(summary.totalSpent)}</span>
           <span style={{ fontSize: '11px', color: '#aaa' }}>{formatCurrency(summary.totalBudget)}</span>
         </div>
       </div>
 
+      {/* FIX 2: Categories now show budget amount, spent, progress bar and percentage */}
       <div style={{ marginBottom: '1rem' }}>
         <div style={sectionHeaderStyle}>
           <h2 style={{ fontSize: '16px', fontWeight: 500, margin: 0, color: '#fff' }}>Categories</h2>
@@ -444,6 +448,12 @@ export default function BudgetPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
           {categoriesWithStats.map((category) => {
             const hasBudget = category.budgetLimit !== undefined
+            const status = getStatus(category.percentage)
+            const barColor =
+              status === 'over-budget' ? '#E24B4A' :
+              status === 'near-limit' ? '#EF9F27' :
+              '#639922'
+
             return (
               <div key={category.id} style={{
                 backgroundColor: '#000',
@@ -451,6 +461,7 @@ export default function BudgetPage() {
                 borderRadius: '12px',
                 padding: '1rem',
               }}>
+                {/* Category header */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                   <div style={{
                     width: '34px',
@@ -466,11 +477,44 @@ export default function BudgetPage() {
                   </div>
                   <div>
                     <p style={{ fontSize: '14px', fontWeight: 500, margin: 0, color: '#fff' }}>{category.name}</p>
-                    <p style={{ fontSize: '12px', color: '#ccc', margin: 0 }}>
+                    <p style={{ fontSize: '12px', color: hasBudget ? '#aaa' : '#555', margin: 0 }}>
                       {hasBudget ? 'Budget set' : 'No budget set'}
                     </p>
                   </div>
                 </div>
+
+                {/* Budget details — only shown when a budget exists */}
+                {hasBudget && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '12px', color: '#aaa' }}>
+                        Spent: <span style={{ color: '#fff', fontWeight: 500 }}>{formatCurrency(category.spent)}</span>
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#aaa' }}>
+                        Limit: <span style={{ color: '#fff', fontWeight: 500 }}>{formatCurrency(category.budgetLimit!)}</span>
+                      </span>
+                    </div>
+                    <div style={{ height: '6px', backgroundColor: '#222', borderRadius: '99px', overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${Math.min(category.percentage, 100)}%`,
+                        backgroundColor: barColor,
+                        borderRadius: '99px',
+                        transition: 'width 0.4s ease',
+                      }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                      <span style={{ fontSize: '11px', color: barColor, fontWeight: 500 }}>
+                        {Math.round(category.percentage)}% used
+                      </span>
+                      <span style={{ fontSize: '11px', color: category.spent <= category.budgetLimit! ? '#639922' : '#E24B4A' }}>
+                        {category.spent <= category.budgetLimit!
+                          ? `${formatCurrency(category.budgetLimit! - category.spent)} left`
+                          : `${formatCurrency(category.spent - category.budgetLimit!)} over`}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             )
           })}
