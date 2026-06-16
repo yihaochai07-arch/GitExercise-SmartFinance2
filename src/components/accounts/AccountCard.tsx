@@ -18,9 +18,8 @@ export default function AccountCard({ account, onDelete }: Props) {
   }
 
   return (
-    <div className="relative flex flex-col gap-3 p-5 rounded-2xl bg-[#0a0a0a] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,255,255,0.03)] overflow-hidden group">
-
-      {/* Top row: logo + badges */}
+    <div className="relative flex flex-col justify-between p-5 w-[85.60mm] h-[53.98mm] rounded-2xl bg-[#0a0a0a] border border-white/[0.06] transition-all duration-500 overflow-hidden group shrink-0 hover:border-pink-500/40 hover:shadow-[0_0_25px_rgba(244,63,94,0.2),_0_0_50px_rgba(147,51,234,0.1),_inset_0_0_15px_rgba(244,63,94,0.05)]">
+      
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center overflow-hidden">
@@ -44,7 +43,6 @@ export default function AccountCard({ account, onDelete }: Props) {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Live / Demo badge */}
           {account.isLive ? (
             <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
               Live
@@ -55,7 +53,6 @@ export default function AccountCard({ account, onDelete }: Props) {
             </span>
           )}
 
-          {/* Trash icon — visible on hover only */}
           {!confirmDelete && (
             <button
               onClick={() => setConfirmDelete(true)}
@@ -67,44 +64,43 @@ export default function AccountCard({ account, onDelete }: Props) {
         </div>
       </div>
 
-      {/* Balance */}
-      {account.isLoading ? (
-        <div className="h-7 w-32 bg-white/[0.06] rounded-lg animate-pulse" />
-      ) : account.error ? (
-        <p className="text-xs text-red-400/70">{account.error}</p>
-      ) : (
-        <p className="text-2xl font-semibold text-white tracking-tight">
-          {account.displayBalance}
-        </p>
-      )}
+      <div className="my-auto">
+        {account.isLoading ? (
+          <div className="h-7 w-32 bg-white/[0.06] rounded-lg animate-pulse" />
+        ) : account.error ? (
+          <p className="text-xs text-red-400/70">{account.error}</p>
+        ) : (
+          <p className="text-2xl font-semibold text-white tracking-tight">
+            {account.displayBalance}
+          </p>
+        )}
+      </div>
 
-      {/* Country */}
       <p className="text-xs text-white/30 font-light">
         {account.provider.country === 'ID' ? 'Indonesia' : account.provider.country === 'SG' ? 'Singapore' : 'Malaysia'}
         {' · '}
         {account.currency}
       </p>
 
-      {/* Confirm delete overlay */}
       {confirmDelete && (
-        <div className="absolute inset-0 bg-[#0a0a0a]/95 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-3 p-5">
-          <p className="text-sm font-medium text-white/80 text-center">
-            Remove <span className="text-white">{account.provider.name}</span>?
+        <div className="absolute inset-0 bg-[#0a0a0a]/95 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center p-4 z-20">
+          <p className="text-xs font-medium text-white/90 text-center px-1">
+            Remove <span className="text-white font-bold">{account.provider.name}</span>?
           </p>
-          <p className="text-xs text-white/30 text-center">
+          <p className="text-[10px] text-white/40 text-center mt-1 leading-normal px-2">
             Your transactions will be kept but unlinked from this account.
           </p>
-          <div className="flex gap-2 mt-1">
+          <div className="flex gap-2 mt-3 w-full justify-center">
             <button
               onClick={() => setConfirmDelete(false)}
-              className="px-4 py-1.5 rounded-lg text-xs font-medium text-white/40 hover:text-white/70 bg-white/[0.04] hover:bg-white/[0.08] transition-all"
+              className="px-3 py-1 rounded-lg text-[11px] font-medium text-white/50 hover:text-white/80 bg-white/[0.04] hover:bg-white/[0.08] transition-all"
             >
               Cancel
             </button>
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="px-4 py-1.5 rounded-lg text-xs font-medium text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/40 transition-all disabled:opacity-40"
+              className="px-3 py-1 rounded-lg text-[11px] font-medium text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/40 transition-all disabled:opacity-40"
             >
               {deleting ? 'Removing…' : 'Remove'}
             </button>
