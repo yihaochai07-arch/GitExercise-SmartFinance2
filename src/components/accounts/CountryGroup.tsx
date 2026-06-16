@@ -36,9 +36,7 @@ export default function CountryGroup({ group, onDelete }: Props) {
               account={account} 
               onDelete={onDelete} 
             />
-            
             <BankCard 
-              card={account} 
               bankName={account.provider.name} 
             />
           </div>

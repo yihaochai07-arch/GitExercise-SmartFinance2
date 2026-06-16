@@ -5,56 +5,12 @@ import CountryGroup from '../components/accounts/CountryGroup'
 import ConnectModal from '../components/accounts/ConnectModal'
 import WithdrawModal from '../components/accounts/WithdrawModal'
 
-interface CustomCardDetails {
-  cardNumber: string
-  cardHolder: string
-  expiryDate: string
-}
-
 export default function Accounts() {
   const { groups, walletAccounts, totalBalanceMYR, loading, error, connectAccount, deleteAccount, withdrawCash } = useWallet()
   const [modalOpen, setModalOpen] = useState(false)
   const [withdrawOpen, setWithdrawOpen] = useState(false) 
 
-  
-  const [customCardsMap, setCustomCardsMap] = useState<Record<string, CustomCardDetails>>({})
-
   const connectedProviderIds = new Set(walletAccounts.map(a => a.provider.id))
-
-  const handleConnectWithDetails = async (
-    providerId: string,
-    cardDetails: CustomCardDetails
-  ) => {
-    setCustomCardsMap(prev => ({
-      ...prev,
-      [providerId]: cardDetails
-    }))
-    await connectAccount(providerId)
-  }
-
-  
-  const enrichedGroups = groups.map(group => ({
-    ...group,
-    accounts: group.accounts.map(account => {
-      const customData = customCardsMap[account.provider.id]
-      if (customData) {
-        
-        return {
-          ...account,
-          cardNumber: customData.cardNumber,
-          cardHolder: customData.cardHolder,
-          expiryDate: customData.expiryDate,
-          
-          number: customData.cardNumber,
-          holder: customData.cardHolder,
-          expiry: customData.expiryDate,
-          lastFour: customData.cardNumber.replace(/\s+/g, '').slice(-4),
-          cardNumberLastFour: customData.cardNumber.replace(/\s+/g, '').slice(-4),
-        } as any
-      }
-      return account
-    })
-  }))
 
   return (
     <div className="min-h-screen bg-[#050505] px-6 py-10 relative overflow-hidden">
@@ -142,8 +98,8 @@ export default function Accounts() {
           </div>
         )}
 
-        
-        {!loading && enrichedGroups.map(group => (
+        {/* Country groups */}
+        {!loading && groups.map(group => (
           <CountryGroup key={group.country} group={group} onDelete={deleteAccount}/>
         ))}
 
@@ -173,7 +129,7 @@ export default function Accounts() {
         open={modalOpen}
         connectedProviderIds={connectedProviderIds}
         onClose={() => setModalOpen(false)}
-        onConnect={handleConnectWithDetails}
+        onConnect={connectAccount}
       />
 
       <WithdrawModal
