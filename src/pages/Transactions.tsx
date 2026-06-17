@@ -3,11 +3,14 @@ import { ArrowDownLeft, ArrowUpRight, LayoutList } from 'lucide-react'
 import { useTransactions } from '../hooks/useTransactions'
 import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
+import { useWallet } from '../hooks/useWallet'
 
 export default function Transactions() {
   const { transactions, totalIncome, totalExpense, loading, error, addTransaction } = useTransactions()
   const { accounts } = useAccounts()
   const { categories } = useCategories()
+  const { walletAccounts } = useWallet()
+  const hasCashAccount = accounts.some(a => a.platform_type === 'cash' || /cash on hand|^cash$/i.test(a.name))
   const [filterAccountId, setFilterAccountId] = useState<string>('all')
   const [cashFlowAmount, setCashFlowAmount] = useState('')
   const [cashFlowCategoryId, setCashFlowCategoryId] = useState('')
@@ -32,8 +35,16 @@ export default function Transactions() {
   }, [cashFlowMonth, cashFlowDay, cashFlowYear])
 
   const cashFlowAccountId = filterAccountId !== 'all'
-    ? filterAccountId
-    : accounts[0]?.id ?? ''
+      ? filterAccountId
+      : (
+        // Prefer an existing "Cash on Hand" account (case-insensitive).
+        // If none exists, prefer the first non-Maybank account to avoid defaulting to Maybank,
+        // otherwise fall back to the very first account or empty string.
+        accounts.find(a => /cash on hand|^cash$/i.test(a.name))?.id
+        ?? accounts.find(a => a.name.toLowerCase() !== 'maybank')?.id
+        ?? accounts[0]?.id
+        ?? ''
+      )
 
   useEffect(() => {
     if (!cashFlowCategoryId && categories.length > 0) {
@@ -60,6 +71,19 @@ export default function Transactions() {
 
     if (!cashFlowAccountId) {
       setFormError('Please add an account before recording expenses by cash.')
+      return
+    }
+
+    // Check if cash account has sufficient balance
+    const cashAccount = walletAccounts.find(a => a.platform_type === 'cash' || /cash on hand|^cash$/i.test(a.name))
+    if (!cashAccount || cashAccount.liveBalance <= 0) {
+      setFormError('Your Cash on Hand balance is insufficient. Please withdraw cash from your bank account first.')
+      return
+    }
+
+    // Check if expense amount exceeds available balance
+    if (amountValue > cashAccount.liveBalance) {
+      setFormError(`Your expense (${amountValue.toFixed(2)}) exceeds your Cash on Hand balance (${cashAccount.liveBalance.toFixed(2)}).`)
       return
     }
 
@@ -139,12 +163,43 @@ export default function Transactions() {
             <p className="text-sm text-white/30 mt-1 font-light">Your recent activity</p>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowCashFlowForm(true)}
-              className="rounded-2xl bg-emerald-500 px-6 py-2 text-sm font-semibold text-black transition hover:bg-emerald-400"
-            >
-              Expenses by Cash
-            </button>
+            {(() => {
+              const cashAccount = walletAccounts.find(a => a.platform_type === 'cash' || /cash on hand|^cash$/i.test(a.name))
+              const hasCashBalance = cashAccount && cashAccount.liveBalance > 0
+              
+              if (!hasCashAccount) {
+                return (
+                  <button
+                    disabled
+                    title="Create a Cash on Hand account to use this"
+                    className="rounded-2xl bg-white/6 px-6 py-2 text-sm font-semibold text-white/40 cursor-not-allowed"
+                  >
+                    Expenses by Cash
+                  </button>
+                )
+              }
+              
+              if (!hasCashBalance) {
+                return (
+                  <button
+                    disabled
+                    title="Withdraw cash from your bank account first"
+                    className="rounded-2xl bg-white/6 px-6 py-2 text-sm font-semibold text-white/40 cursor-not-allowed"
+                  >
+                    Expenses by Cash
+                  </button>
+                )
+              }
+              
+              return (
+                <button
+                  onClick={() => setShowCashFlowForm(true)}
+                  className="rounded-2xl bg-emerald-500 px-6 py-2 text-sm font-semibold text-black transition hover:bg-emerald-400"
+                >
+                  Expenses by Cash
+                </button>
+              )
+            })()}
             {accounts.length > 0 && (
               <select
                 value={filterAccountId}
@@ -188,6 +243,12 @@ export default function Transactions() {
                     className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-white outline-none focus:border-white/[0.16]"
                     placeholder="100.00"
                   />
+                  <p className="text-xs text-white/40 mt-1">
+                    Available: {(() => {
+                      const cashAccount = walletAccounts.find(a => a.platform_type === 'cash' || /cash on hand|^cash$/i.test(a.name))
+                      return cashAccount ? cashAccount.displayBalance : 'No cash account'
+                    })()}
+                  </p>
                 </label>
                 <label className="space-y-2 text-sm text-white/70">
                   Date
