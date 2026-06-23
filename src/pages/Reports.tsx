@@ -12,6 +12,7 @@ import {
   AdvancedFilters,
   CategoryTree,
   CashFlowChart,
+  PieChart,  
 } from '../components/reports'
 import type { MonthlyData, CategoryNode } from '../components/reports'
 
@@ -226,6 +227,46 @@ export default function Reports() {
     }
   }, [monthLabels, reportData, selectedMonthKey])
 
+ // PieChart
+const pieData = useMemo(() => {
+  const CATEGORY_COLORS: Record<string, string> = {
+    'Food & Dining': '#f59e0b',  
+    'Utilities': '#6b7280',        
+    'Shopping': '#ec4899',        
+    'Transport': '#3b82f6',        
+    'Other': '#94a3b8',            
+    'Entertainment': '#8b5cf6',    
+    'Investments': '#f97316',      
+    'Health': '#14b8a6',          
+  }
+
+  const entries = Object.entries(reportData.uiCategoryBreakdown)
+    .map(([name, amount]) => ({
+      name,
+      value: amount,
+      color: CATEGORY_COLORS[name] || '#6b7280',
+      percentage: reportData.uiExpense > 0 ? (amount / reportData.uiExpense) * 100 : 0,
+    }))
+    .sort((a, b) => b.value - a.value)
+
+  if (entries.length > 8) {
+    const main = entries.slice(0, 7)
+    const others = entries.slice(7)
+    const othersTotal = others.reduce((sum, item) => sum + item.value, 0)
+    if (othersTotal > 0) {
+      main.push({
+        name: 'Others',
+        value: othersTotal,
+        color: '#94a3b8',
+        percentage: reportData.uiExpense > 0 ? (othersTotal / reportData.uiExpense) * 100 : 0,
+      })
+    }
+    return main
+  }
+
+  return entries
+}, [reportData.uiCategoryBreakdown, reportData.uiExpense])
+
   const exportToPDF = async () => {
     const element = document.getElementById('report-pdf-content')
     if (!element) return
@@ -428,7 +469,7 @@ export default function Reports() {
               />
             </div>
 
-            {/* CATEGORY*/}
+            {/* CATEGORY + PIE CHART */}
             <div className="dashboard-category-view p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
               <div className="flex justify-between items-center mb-5">
                 <h3 className="text-sm font-semibold text-white/80">Expense Breakdown by Category</h3>
@@ -444,11 +485,28 @@ export default function Reports() {
                   <div className="text-white/30 text-sm">No categorical outflows recorded</div>
                 </div>
               ) : (
-                <CategoryTree
-                  data={categoryTreeData}
-                  formatCurrency={formatCurrency}
-                  maxDepth={1}
-                />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  
+                  <div className="flex items-center justify-center">
+                    {pieData.length > 0 ? (
+                      <PieChart 
+                        data={pieData} 
+                        formatCurrency={formatCurrency} 
+                        height={300}
+                      />
+                    ) : (
+                      <div className="text-white/30 text-sm">No data</div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center">
+                    <CategoryTree
+                      data={categoryTreeData}
+                      formatCurrency={formatCurrency}
+                      maxDepth={1}
+                    />
+                  </div>
+                </div>
               )}
             </div>
 

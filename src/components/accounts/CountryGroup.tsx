@@ -1,6 +1,7 @@
 import { WalletGroup } from '../../hooks/useWallet'
 import AccountCard from './AccountCard'
 
+
 interface Props {
   group: WalletGroup
   onDelete: (accountId: string) => Promise<boolean>
@@ -26,14 +27,14 @@ export default function CountryGroup({ group, onDelete }: Props) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-       {group.accounts.map(account => (
-       <AccountCard
-        key={account.id}
-        account={account}
-        onDelete={onDelete}
-       />
-    ))}
-  </div>
+  {group.accounts.map(account => (
+    <AccountCard
+      key={account.id}
+      account={account}
+      onDelete={onDelete}
+    />
+  ))}
+</div>
     </div>
   )
 }
