@@ -12,3 +12,6 @@ export type { CategoryNode } from './CategoryTree'
 
 export { default as CashFlowChart } from './CashFlowChart'
 export type { CashFlowData } from './CashFlowChart'
+
+export { default as PieChart } from './PieChart'
+export type { PieData } from './PieChart'
