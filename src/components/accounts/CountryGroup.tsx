@@ -1,6 +1,5 @@
 import { WalletGroup } from '../../hooks/useWallet'
 import AccountCard from './AccountCard'
-import BankCard from './BankCard'
 
 interface Props {
   group: WalletGroup
@@ -26,22 +25,15 @@ export default function CountryGroup({ group, onDelete }: Props) {
         <span className="text-sm font-medium text-white/40">{group.subtotal}</span>
       </div>
 
-      <div className="flex flex-col gap-4">
-        {group.accounts.map(account => (
-          <div 
-            key={account.id} 
-            className="flex flex-col md:flex-row gap-4 items-center justify-start"
-          >
-            <AccountCard 
-              account={account} 
-              onDelete={onDelete} 
-            />
-            <BankCard 
-              bankName={account.provider.name} 
-            />
-          </div>
-        ))}
-      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+       {group.accounts.map(account => (
+       <AccountCard
+        key={account.id}
+        account={account}
+        onDelete={onDelete}
+       />
+    ))}
+  </div>
     </div>
   )
 }
