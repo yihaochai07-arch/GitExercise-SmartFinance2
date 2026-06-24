@@ -4,16 +4,19 @@ import { useAuth } from '../context/AuthContext'
 
 export type Transaction = {
     id: string
-    user_id: string          
+    user_id: string
     amount: number
     type: 'income' | 'expense'
     category_id: string
     account_id: string
     date: string
+    note: string | null   // ← added
     created_at: string
 }
 
-type NewTransaction = Omit<Transaction, 'id' | 'created_at' | 'user_id'>
+type NewTransaction = Omit<Transaction, 'id' | 'created_at' | 'user_id'> & {
+  category_id: string | null
+}
 
 type UseTransactionsReturn = {
     transactions: Transaction[]
@@ -83,3 +86,4 @@ export function useTransactions(): UseTransactionsReturn {
 
     return { transactions, totalExpense, totalIncome, loading, error, addTransaction }
 }
+

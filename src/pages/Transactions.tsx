@@ -88,12 +88,13 @@ export default function Transactions() {
     }
 
     const newTransaction = await addTransaction({
-      amount: amountValue,
-      type: 'expense',
-      category_id: cashFlowCategoryId,
-      account_id: cashFlowAccountId,
-      date: cashFlowDate,
-    })
+  amount: amountValue,
+  type: 'expense',
+  category_id: cashFlowCategoryId,
+  account_id: cashFlowAccountId,
+  date: cashFlowDate,
+  note: null,
+})
 
     if (newTransaction) {
       setFormMessage('Expense recorded successfully.')

@@ -11,6 +11,7 @@ type TransactionInsert = {
   type: 'income' | 'expense'
   category_id: string
   date: string
+  note?: string | null
 }
 
 // ─── Seeded LCG random number generator ──────────────────────────────────────
