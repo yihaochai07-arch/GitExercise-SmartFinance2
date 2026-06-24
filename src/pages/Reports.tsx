@@ -1,21 +1,35 @@
 import { useState, useMemo } from 'react'
-import { BarChart3, ArrowUpRight, ArrowDownRight, Wallet, Download, Calendar } from 'lucide-react'
+import { Wallet, ArrowUpRight, ArrowDownRight, Download } from 'lucide-react'
 import { useTransactions } from '../hooks/useTransactions'
 import { useWallet } from '../hooks/useWallet'
 import { useCategories } from '../hooks/useCategories'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
+import {
+  KpiCard,
+  MonthlyComparison,
+  AdvancedFilters,
+  CategoryTree,
+  CashFlowChart,
+  PieChart,  
+} from '../components/reports'
+import type { MonthlyData, CategoryNode } from '../components/reports'
+
 export default function Reports() {
   const { transactions, loading: txLoading, error: txError } = useTransactions()
   const { totalBalanceMYR, groups, loading: walletLoading, error: walletError } = useWallet() as any
-  const { categories } = useCategories()
+  const { categories, loading: categoriesLoading } = useCategories()
   
   const [filterAccountId, setFilterAccountId] = useState<string>('all')
+  const [filterCategoryIds, setFilterCategoryIds] = useState<string[]>([])
+  const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all')
+  const [filterMinAmount, setFilterMinAmount] = useState<number | null>(null)
+  const [filterMaxAmount, setFilterMaxAmount] = useState<number | null>(null)
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>('all') 
   const [isExporting, setIsExporting] = useState(false)
 
-  const loading = txLoading || walletLoading
+  const loading = txLoading || walletLoading || categoriesLoading
   const error = txError || walletError
 
   const monthLabels = useMemo(() => {
@@ -83,9 +97,17 @@ export default function Reports() {
     transactions.forEach(t => {
       if (filterAccountId !== 'all' && t.account_id !== filterAccountId) return
 
+      if (filterType === 'income' && t.type !== 'income') return
+      if (filterType === 'expense' && t.type !== 'expense') return
+
+      const amount = Number(t.amount) || 0
+      if (filterMinAmount !== null && amount < filterMinAmount) return
+      if (filterMaxAmount !== null && amount > filterMaxAmount) return
+
+      if (filterCategoryIds.length > 0 && !filterCategoryIds.includes(t.category_id)) return
+
       const txnDate = new Date(t.date)
       const txnMonthKey = `${txnDate.getFullYear()}-${String(txnDate.getMonth() + 1).padStart(2, '0')}`
-      const amount = Number(t.amount) || 0
 
       if (targetMonths.includes(txnMonthKey)) {
         const currentMonthLabel = monthLabels.find(m => m.monthKey === txnMonthKey)?.shortLabel || 'Other'
@@ -127,7 +149,7 @@ export default function Reports() {
       fullCategoryBreakdown,
       fullIncomeBreakdown
     }
-  }, [transactions, filterAccountId, categories, monthLabels, selectedMonthKey])
+  }, [transactions, filterAccountId, filterCategoryIds, filterType, filterMinAmount, filterMaxAmount, categories, monthLabels, selectedMonthKey])
 
   const formatCurrency = (val: number) => {
     const symbol = primaryCurrency === 'MYR' ? 'RM' : primaryCurrency + ' '
@@ -146,6 +168,104 @@ export default function Reports() {
     }).format(val)
     return `${symbol}${formattedNum}`
   }
+
+
+  //  MonthlyComparison 
+  const monthlyComparisonData = useMemo<MonthlyData[]>(() => {
+    return monthLabels.map((m) => {
+      const data = reportData.monthlyStats[m.monthKey] || { income: 0, expense: 0 }
+      return {
+        monthKey: m.monthKey,
+        displayLabel: m.displayLabel,
+        shortLabel: m.shortLabel,
+        periodLabel: m.periodLabel,
+        income: data.income,
+        expense: data.expense,
+        net: data.income - data.expense,
+      }
+    })
+  }, [monthLabels, reportData])
+
+  //  CategoryTree 
+  const categoryTreeData = useMemo<CategoryNode[]>(() => {
+    return Object.entries(reportData.uiCategoryBreakdown).map(([name, amount]) => {
+      const percentage = reportData.uiExpense > 0 ? (amount / reportData.uiExpense) * 100 : 0
+      const category = categories.find(c => c.name === name)
+      return {
+        id: category?.id || name,
+        name,
+        icon: category?.icon || '📂',
+        color: category?.color || '#888',
+        amount,
+        percentage,
+        children: [],
+      }
+    })
+  }, [reportData.uiCategoryBreakdown, reportData.uiExpense, categories])
+
+  // CashFlowChart 
+  const totalCashFlow = useMemo(() => {
+    if (selectedMonthKey !== 'all') {
+      const data = reportData.monthlyStats[selectedMonthKey] || { income: 0, expense: 0 }
+      return {
+        income: data.income,
+        expense: data.expense,
+        net: data.income - data.expense,
+      }
+    }
+    
+    const totalIncome = monthLabels.reduce((sum, m) => {
+      return sum + (reportData.monthlyStats[m.monthKey]?.income || 0)
+    }, 0)
+    const totalExpense = monthLabels.reduce((sum, m) => {
+      return sum + (reportData.monthlyStats[m.monthKey]?.expense || 0)
+    }, 0)
+    return {
+      income: totalIncome,
+      expense: totalExpense,
+      net: totalIncome - totalExpense,
+    }
+  }, [monthLabels, reportData, selectedMonthKey])
+
+ // PieChart
+const pieData = useMemo(() => {
+  const CATEGORY_COLORS: Record<string, string> = {
+    'Food & Dining': '#f59e0b',  
+    'Utilities': '#6b7280',        
+    'Shopping': '#ec4899',        
+    'Transport': '#3b82f6',        
+    'Other': '#94a3b8',            
+    'Entertainment': '#8b5cf6',    
+    'Investments': '#f97316',      
+    'Health': '#14b8a6',          
+  }
+
+  const entries = Object.entries(reportData.uiCategoryBreakdown)
+    .map(([name, amount]) => ({
+      name,
+      value: amount,
+      color: CATEGORY_COLORS[name] || '#6b7280',
+      percentage: reportData.uiExpense > 0 ? (amount / reportData.uiExpense) * 100 : 0,
+    }))
+    .sort((a, b) => b.value - a.value)
+
+  if (entries.length > 8) {
+    const main = entries.slice(0, 7)
+    const others = entries.slice(7)
+    const othersTotal = others.reduce((sum, item) => sum + item.value, 0)
+    if (othersTotal > 0) {
+      main.push({
+        name: 'Others',
+        value: othersTotal,
+        color: '#94a3b8',
+        percentage: reportData.uiExpense > 0 ? (othersTotal / reportData.uiExpense) * 100 : 0,
+      })
+    }
+    return main
+  }
+
+  return entries
+}, [reportData.uiCategoryBreakdown, reportData.uiExpense])
 
   const exportToPDF = async () => {
     const element = document.getElementById('report-pdf-content')
@@ -192,32 +312,50 @@ export default function Reports() {
 
   return (
     <div className="min-h-screen bg-[#050505] px-6 py-10 relative overflow-hidden">
+      {/*BACKGROUND */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute top-0 right-1/4 w-[500px] h-[250px] bg-pink-500/[0.02] rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-1/4 w-[500px] h-[250px] bg-purple-500/[0.02] rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+      <div className="relative z-10 max-w-6xl mx-auto">
+        {/* HEAD */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-white tracking-tight">Financial Performance</h1>
             <p className="text-sm text-white/30 mt-1 font-light">Comparative analysis for the last 3 months</p>
           </div>
 
-          <div className="flex items-center gap-3 self-start sm:self-auto">
-            {detailedAccountsList.length > 0 && (
-              <select
-                value={filterAccountId}
-                onChange={e => setFilterAccountId(e.target.value)}
-                className="bg-[#0a0a0a] border border-white/[0.06] text-white/60 text-sm rounded-xl px-4 py-2 outline-none focus:border-white/[0.12] cursor-pointer transition-all"
-              >
-                <option value="all">All accounts</option>
-                {detailedAccountsList.map(a => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
-                ))}
-              </select>
-            )}
+          <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
+            {/* AdvancedFilters*/}
+            <AdvancedFilters
+              accounts={detailedAccountsList.map(a => ({ id: a.id, name: a.name }))}
+              categories={categories.map(c => ({ id: c.id, name: c.name, icon: c.icon }))}
+              currentFilters={{
+                accountId: filterAccountId === 'all' ? null : filterAccountId,
+                categoryIds: filterCategoryIds,
+                type: filterType,
+                minAmount: filterMinAmount,
+                maxAmount: filterMaxAmount,
+                dateRange: { start: null, end: null },
+              }}
+              onApplyFilters={(filters) => {
+                setFilterAccountId(filters.accountId || 'all')
+                setFilterCategoryIds(filters.categoryIds)
+                setFilterType(filters.type)
+                setFilterMinAmount(filters.minAmount)
+                setFilterMaxAmount(filters.maxAmount)
+              }}
+              onClearFilters={() => {
+                setFilterAccountId('all')
+                setFilterCategoryIds([])
+                setFilterType('all')
+                setFilterMinAmount(null)
+                setFilterMaxAmount(null)
+              }}
+            />
 
+            {/*DOWNLOAD PDF */}
             {!loading && !error && detailedAccountsList?.length !== 0 && (
               <button
                 onClick={exportToPDF}
@@ -245,6 +383,7 @@ export default function Reports() {
           </div>
         )}
 
+        {/* MAIN */}
         {!loading && !error && (
           <div id="report-pdf-content" className="space-y-6 p-4 rounded-2xl bg-[#050505]">
             
@@ -253,50 +392,47 @@ export default function Reports() {
               .pdf-print-mode { background-color: #ffffff !important; color: #000000 !important; padding: 30px !important; }
               .pdf-print-mode .dashboard-cards-view,
               .pdf-print-mode .dashboard-monthly-breakdown,
-              .pdf-print-mode .dashboard-category-view { display: none !important; }
+              .pdf-print-mode .dashboard-category-view,
+              .pdf-print-mode .dashboard-cashflow-view { display: none !important; }
               .pdf-print-mode .pdf-assignment-table { display: block !important; color: #000000 !important; font-family: Arial, sans-serif; }
             `}</style>
 
+            {/* KPI CARD */}
             <div className="dashboard-cards-view grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
-                <div className="flex items-center gap-2 mb-2">
-                  <Wallet size={14} className="text-purple-400/70" />
-                  <span className="text-xs font-medium text-white/40 uppercase tracking-widest">Total Assets</span>
-                </div>
-                <p className="text-2xl font-bold text-white tabular-nums">{formatSpecificCurrency(totalAssets, 'MYR')}</p>
-                <span className="text-[11px] text-white/20 mt-1 block">Live balance (MYR)</span>
-              </div>
+              <KpiCard
+                title="Total Assets"
+                value={totalAssets}
+                icon={<Wallet size={18} className="text-purple-400/70" />}
+                color="purple"
+                subtitle="Live balance (MYR)"
+                valuePrefix="RM "
+              />
 
-              <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
-                <div className="flex items-center gap-2 mb-2">
-                  <ArrowUpRight size={14} className="text-emerald-400/70" />
-                  <span className="text-xs font-medium text-white/40 uppercase tracking-widest">
-                    {selectedMonthKey === 'all' ? '3M Total Income' : 'Selected Month Income'}
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-emerald-400 tabular-nums">{formatCurrency(reportData.uiIncome)}</p>
-                <span className="text-[11px] text-white/20 mt-1 block">
-                  {selectedMonthKey === 'all' ? 'Accumulated inflow' : 'Filtered context'}
-                </span>
-              </div>
+              <KpiCard
+                title={selectedMonthKey === 'all' ? '3M Total Income' : 'Selected Month Income'}
+                value={reportData.uiIncome}
+                icon={<ArrowUpRight size={18} className="text-emerald-400/70" />}
+                color="emerald"
+                subtitle={selectedMonthKey === 'all' ? 'Accumulated inflow' : 'Filtered context'}
+                valuePrefix="RM "
+              />
 
-              <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
-                <div className="flex items-center gap-2 mb-2">
-                  <ArrowDownRight size={14} className="text-rose-400/70" />
-                  <span className="text-xs font-medium text-white/40 uppercase tracking-widest">
-                    {selectedMonthKey === 'all' ? '3M Expenses' : 'Selected Month Expenses'}
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-rose-400 tabular-nums">{formatCurrency(reportData.uiExpense)}</p>
-                <span className="text-[11px] text-white/20 mt-1 block">
-                  {selectedMonthKey === 'all' ? 'Accumulated outflow' : 'Filtered context'}
-                </span>
-              </div>
+              <KpiCard
+                title={selectedMonthKey === 'all' ? '3M Expenses' : 'Selected Month Expenses'}
+                value={reportData.uiExpense}
+                icon={<ArrowDownRight size={18} className="text-rose-400/70" />}
+                color="rose"
+                subtitle={selectedMonthKey === 'all' ? 'Accumulated outflow' : 'Filtered context'}
+                valuePrefix="RM "
+              />
             </div>
 
+            {/* MONTHY COMPARARISON */}
             <div className="dashboard-monthly-breakdown space-y-3">
               <div className="flex justify-between items-center px-1">
-                <span className="text-xs font-medium text-white/30 uppercase tracking-wider">Filter by Statement Period</span>
+                <span className="text-xs font-medium text-white/30 uppercase tracking-wider">
+                  Filter by Statement Period
+                </span>
                 {selectedMonthKey !== 'all' && (
                   <button 
                     onClick={() => setSelectedMonthKey('all')}
@@ -307,94 +443,74 @@ export default function Reports() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {monthLabels.map((m) => {
-                  const data = reportData.monthlyStats[m.monthKey] || { income: 0, expense: 0 }
-                  const netStatus = data.income - data.expense
-                  const isSelected = selectedMonthKey === m.monthKey
-
-                  return (
-                    <button
-                      key={m.monthKey}
-                      onClick={() => setSelectedMonthKey(m.monthKey)}
-                      className={`text-left p-5 rounded-2xl border transition-all duration-200 outline-none relative overflow-hidden ${
-                        isSelected 
-                          ? 'bg-pink-500/[0.03] border-pink-500/40 shadow-lg shadow-pink-500/[0.02]' 
-                          : 'bg-[#0a0a0a] border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.01]'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full border ${
-                            isSelected 
-                              ? 'text-pink-400 bg-pink-500/10 border-pink-500/20' 
-                              : 'text-white/40 bg-white/[0.02] border-white/[0.04]'
-                          }`}>
-                            {m.periodLabel}
-                          </span>
-                          <h4 className="text-sm font-semibold text-white/80 mt-1.5">{m.displayLabel}</h4>
-                        </div>
-                        <Calendar size={16} className={isSelected ? 'text-pink-400/40' : 'text-white/10'} />
-                      </div>
-
-                      <div className="space-y-2 pointer-events-none">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-white/40">Inflow:</span>
-                          <span className="text-emerald-400 font-medium">{formatCurrency(data.income)}</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-white/40">Outflow:</span>
-                          <span className="text-rose-400 font-medium">{formatCurrency(data.expense)}</span>
-                        </div>
-                        <div className="pt-2 border-t border-white/[0.04] flex justify-between text-xs font-semibold">
-                          <span className="text-white/60">Net Balance:</span>
-                          <span className={netStatus >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                            {netStatus >= 0 ? '+' : ''}{formatCurrency(netStatus)}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
+              <MonthlyComparison
+                data={monthlyComparisonData}
+                selectedMonthKey={selectedMonthKey}
+                onSelectMonth={setSelectedMonthKey}
+                formatCurrency={formatCurrency}
+              />
             </div>
 
+            {/*CASHFLOW*/}
+            <div className="dashboard-cashflow-view p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-semibold text-white/80">Cash Flow</h3>
+                <span className="text-[11px] font-mono text-white/20">
+                  {selectedMonthKey !== 'all' 
+                    ? `Month: ${monthLabels.find(m => m.monthKey === selectedMonthKey)?.displayLabel}` 
+                    : '3-Month Total'}
+                  {filterCategoryIds.length > 0 && ` | Category: ${filterCategoryIds.map(id => categories.find(c => c.id === id)?.name).join(', ')}`}
+                </span>
+              </div>
+              <CashFlowChart
+                data={totalCashFlow}
+                formatCurrency={formatCurrency}
+                height={280}
+              />
+            </div>
+
+            {/* CATEGORY + PIE CHART */}
             <div className="dashboard-category-view p-6 rounded-2xl bg-[#0a0a0a] border border-white/[0.06]">
               <div className="flex justify-between items-center mb-5">
                 <h3 className="text-sm font-semibold text-white/80">Expense Breakdown by Category</h3>
                 <span className="text-[11px] font-mono text-white/20">
-                  {selectedMonthKey === 'all' ? 'Context: Full 3 Months' : `Context: Only ${monthLabels.find(m => m.monthKey === selectedMonthKey)?.shortLabel}`}
+                  {selectedMonthKey === 'all' 
+                    ? 'Context: Full 3 Months' 
+                    : `Context: Only ${monthLabels.find(m => m.monthKey === selectedMonthKey)?.shortLabel}`}
                 </span>
               </div>
 
-              {Object.keys(reportData.uiCategoryBreakdown).length === 0 ? (
+              {categoryTreeData.length === 0 ? (
                 <div className="text-center py-10">
-                  <BarChart3 size={32} className="mx-auto text-white/10 mb-2" />
-                  <p className="text-xs text-white/30">No categorical outflows recorded for this selected context</p>
+                  <div className="text-white/30 text-sm">No categorical outflows recorded</div>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {Object.entries(reportData.uiCategoryBreakdown).map(([category, amount]) => {
-                    const sharePercentage = reportData.uiExpense > 0 ? (amount / reportData.uiExpense) * 100 : 0
-                    return (
-                      <div key={category} className="space-y-1.5">
-                        <div className="flex justify-between text-xs font-medium">
-                          <span className="text-white/60">{category}</span>
-                          <span className="text-white tracking-tight">{formatCurrency(amount)} ({sharePercentage.toFixed(0)}%)</span>
-                        </div>
-                        <div className="w-full bg-white/[0.02] h-1.5 rounded-full overflow-hidden border border-white/[0.04]">
-                          <div 
-                            className="h-full bg-gradient-to-r from-pink-500/60 to-purple-500/60"
-                            style={{ width: `${sharePercentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  
+                  <div className="flex items-center justify-center">
+                    {pieData.length > 0 ? (
+                      <PieChart 
+                        data={pieData} 
+                        formatCurrency={formatCurrency} 
+                        height={300}
+                      />
+                    ) : (
+                      <div className="text-white/30 text-sm">No data</div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center">
+                    <CategoryTree
+                      data={categoryTreeData}
+                      formatCurrency={formatCurrency}
+                      maxDepth={1}
+                    />
+                  </div>
                 </div>
               )}
             </div>
 
+            {/* PDF */}
             <div className="pdf-assignment-table w-full max-w-2xl mx-auto hidden">
               <div className="pb-3 text-center mb-6">
                 <h2 className="text-xl font-bold uppercase tracking-wider text-black">STATEMENT OF FINANCIAL PERFORMANCE</h2>

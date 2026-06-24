@@ -20,6 +20,8 @@ type UseGoalsReturn = {
     getProgress: (current: number, target: number) => number
     isCompleted: (current: number, target: number) => boolean
     addGoal: (goal: NewGoal) => Promise<Goal | null>
+    deleteGoal: (goalId: string) => Promise<boolean>
+    addSavings: (goalId: string, amount: number) => Promise<boolean>
     loading: boolean
     error: string | null
 }
@@ -74,6 +76,53 @@ export function useGoals(): UseGoalsReturn {
         }
     }
 
+    async function deleteGoal(goalId: string): Promise<boolean> {
+        if (!user) return false
+        try {
+            const { error } = await supabase
+                .from('goals')
+                .delete()
+                .eq('id', goalId)
+                .eq('user_id', user.id)
+
+            if (error) throw error
+            setGoals(prev => prev.filter(g => g.id !== goalId))
+            return true
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to delete goal')
+            return false
+        }
+    }
+
+    async function addSavings(goalId: string, amount: number): Promise<boolean> {
+        if (!user) return false
+        if (amount <= 0) {
+            setError('Amount must be greater than 0')
+            return false
+        }
+        try {
+            const goal = goals.find(g => g.id === goalId)
+            if (!goal) throw new Error('Goal not found')
+
+            const newAmount = goal.current_amount + amount
+
+            const { data, error } = await supabase
+                .from('goals')
+                .update({ current_amount: newAmount })
+                .eq('id', goalId)
+                .eq('user_id', user.id)
+                .select()
+                .single()
+
+            if (error) throw error
+            setGoals(prev => prev.map(g => g.id === goalId ? data : g))
+            return true
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to add savings')
+            return false
+        }
+    }
+
     function getProgress(current: number, target: number) {
         if (target === 0) return 0
         return Math.min(100, (current / target) * 100)
@@ -83,5 +132,5 @@ export function useGoals(): UseGoalsReturn {
         return current >= target
     }
 
-    return { goals, getProgress, isCompleted, addGoal, loading, error }
+    return { goals, getProgress, isCompleted, addGoal, deleteGoal, addSavings, loading, error }
 }

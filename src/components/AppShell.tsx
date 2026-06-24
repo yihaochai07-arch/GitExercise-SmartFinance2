@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Wallet, BarChart3, Wallet2, Flag, FileText, LogOut, Menu, X } from 'lucide-react';
+import { Wallet, LayoutGrid , CreditCard, Flag, FileText, LogOut, Menu, X, HandCoins } from 'lucide-react';
 
 export default function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -10,12 +10,12 @@ export default function AppShell() {
   const location = useLocation();
 
   const navItems = [
-    { name: 'Dashboard', path: '/app/dashboard', icon: BarChart3 },
-    { name: 'Accounts', path: '/app/accounts', icon: Wallet2 },
+    { name: 'Home', path: '/app/dashboard', icon: LayoutGrid },
+    { name: 'Accounts', path: '/app/accounts', icon: CreditCard },
     { name: 'Transactions', path: '/app/transactions', icon: Wallet },
     { name: 'Goals', path: '/app/goals', icon: Flag },
     { name: 'Reports', path: '/app/reports', icon: FileText },
-    { name: 'Budgets', path: '/app/budgets', icon: FileText }
+    { name: 'Budgets', path: '/app/budgets', icon: HandCoins }
   ];
 
   const handleSignOut = async () => {
