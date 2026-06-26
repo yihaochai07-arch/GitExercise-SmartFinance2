@@ -100,6 +100,7 @@ export default function BudgetPage() {
   const [loanFormMessage, setLoanFormMessage] = useState<string | null>(null)
   const [loanFormError, setLoanFormError] = useState<string | null>(null)
   const [isSubmittingLoan, setIsSubmittingLoan] = useState(false)
+  const [settlingId, setSettlingId] = useState<string | null>(null)
   const loanYear = String(today.getFullYear())
   const [loanMonth, setLoanMonth] = useState(String(today.getMonth() + 1).padStart(2, '0'))
   const [loanDay, setLoanDay] = useState(String(today.getDate()).padStart(2, '0'))
@@ -282,11 +283,10 @@ export default function BudgetPage() {
       : `Lent to: ${personTrimmed}`
 
     setIsSubmittingLoan(true)
-console.log('Loan payload:', { amount: amountValue, type: transactionType, category_id: loanCategory?.id ?? null, account_id: loanAccountId, date: loanDate, note: noteLabel })
-const newTransaction = await addTransaction({
+    const newTransaction = await addTransaction({
       amount: amountValue,
       type: transactionType,
-      category_id: loanCategory?.id ?? null,
+      category_id: loanCategory?.id ?? '',
       account_id: loanAccountId,
       date: loanDate,
       note: noteLabel,
@@ -306,12 +306,42 @@ const newTransaction = await addTransaction({
       setLoanDay(String(r.getDate()).padStart(2, '0'))
       setTimeout(() => { setShowLoanForm(false); setLoanFormMessage(null) }, 1500)
     } else {
-  setLoanFormError(txError ?? 'Failed to record loan. Check console for details.')
-  console.error('Loan insert failed:', txError)
+      setLoanFormError('Failed to record loan.')
     }
   }
 
-  const changeMonth = (dir: 1 | -1) => {
+  async function handleSettleLoan(loan: LoanRecord) {
+    setSettlingId(loan.id)
+
+    // Find the account id from accounts list
+    const account = accounts.find(a => a.name === loan.accountName)
+    if (!account) {
+      setSettlingId(null)
+      return
+    }
+
+    const loanCategory = categories.find(c => /loan|borrow/i.test(c.name)) ?? categories[0]
+
+    // Borrowed from someone → settling means you repay → expense
+    // Lent to someone → settling means they repay you → income
+    const settleType = loan.direction === 'borrowed_from' ? 'expense' : 'income'
+    const settleNote = loan.direction === 'borrowed_from'
+      ? `Settled: repaid to ${loan.person}`
+      : `Settled: received from ${loan.person}`
+
+    await addTransaction({
+      amount: loan.amount,
+      type: settleType,
+      category_id: loanCategory?.id ?? null,
+      account_id: account.id,
+      date: new Date().toISOString().split('T')[0],
+      note: settleNote,
+    })
+
+    setSettlingId(null)
+  }
+
+    const changeMonth = (dir: 1 | -1) => {
     const next = viewMonth + dir
     if (next > 11) { setViewMonth(0); setViewYear((y) => y + 1) }
     else if (next < 0) { setViewMonth(11); setViewYear((y) => y - 1) }
@@ -320,7 +350,7 @@ const newTransaction = await addTransaction({
 
   const isCurrentMonth = viewMonth === today.getMonth() && viewYear === today.getFullYear()
   const loading = catLoading || budgetsLoading || txLoading
-  const error = catError ?? budgetsError
+  const error = catError ?? budgetsError ?? txError
   const overallBarColor = summary.percentageUsed >= 100 ? '#E24B4A' : summary.percentageUsed >= 80 ? '#EF9F27' : '#639922'
   const loanDaysInMonth = new Date(Number(loanYear), Number(loanMonth), 0).getDate()
   const MONTH_NUMS = ['01','02','03','04','05','06','07','08','09','10','11','12']
@@ -588,13 +618,23 @@ const newTransaction = await addTransaction({
                     </p>
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '14px', fontWeight: 600, margin: 0, color: loan.direction === 'borrowed_from' ? '#4ade80' : '#f87171' }}>
-                    {loan.direction === 'borrowed_from' ? '+' : '-'}{formatCurrency(loan.amount)}
-                  </p>
-                  <p style={{ fontSize: '10px', color: '#3b82f6', margin: '2px 0 0', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-                    {loan.direction === 'borrowed_from' ? 'borrowed' : 'lent'}
-                  </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: '14px', fontWeight: 600, margin: 0, color: loan.direction === 'borrowed_from' ? '#4ade80' : '#f87171' }}>
+                      {loan.direction === 'borrowed_from' ? '+' : '-'}{formatCurrency(loan.amount)}
+                    </p>
+                    <p style={{ fontSize: '10px', color: '#3b82f6', margin: '2px 0 0', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                      {loan.direction === 'borrowed_from' ? 'borrowed' : 'lent'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleSettleLoan(loan)}
+                    disabled={settlingId === loan.id}
+                    title={loan.direction === 'borrowed_from' ? 'Mark as repaid' : 'Mark as settled'}
+                    style={{ background: 'none', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '5px 10px', color: settlingId === loan.id ? '#555' : '#aaa', fontSize: '12px', cursor: settlingId === loan.id ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    {settlingId === loan.id ? '...' : '✓ Settle'}
+                  </button>
                 </div>
               </div>
             ))}

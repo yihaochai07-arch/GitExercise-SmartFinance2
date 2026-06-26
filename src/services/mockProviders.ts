@@ -66,3 +66,32 @@ export const COUNTRY_LABELS: Record<'ID' | 'SG' | 'MY', string> = {
   SG: 'Singapore',
   MY: 'Malaysia',
 }
+
+// ── Premium card gradients per bank ──────────────────────────────
+export const CARD_THEMES: Record<string, {
+  gradient: string
+  shadow: string
+  chip: string
+  network: 'visa' | 'mastercard' | 'cash'
+}> = {
+  // Singapore
+  uob:  { gradient: 'from-[#0a1628] via-[#0d2147] to-[#091235]', shadow: 'rgba(30,80,180,0.35)',  chip: '#c8a84b', network: 'mastercard' },
+  dbs:  { gradient: 'from-[#1a0608] via-[#3d0b10] to-[#1a0608]', shadow: 'rgba(180,20,30,0.35)',  chip: '#c8a84b', network: 'mastercard' },
+  ocbc: { gradient: 'from-[#0d1a0d] via-[#1a3a1a] to-[#0d1a0d]', shadow: 'rgba(220,80,0,0.3)',   chip: '#d4af37', network: 'visa'       },
+  // Malaysia
+  maybank: { gradient: 'from-[#1a1400] via-[#3d3000] to-[#1a1400]', shadow: 'rgba(200,160,0,0.35)',  chip: '#d4af37', network: 'visa'       },
+  cimb:    { gradient: 'from-[#1a0505] via-[#3d0a0a] to-[#1a0505]', shadow: 'rgba(180,0,0,0.35)',    chip: '#c8a84b', network: 'visa'       },
+  // Indonesia
+  bca:     { gradient: 'from-[#001433] via-[#002966] to-[#001433]', shadow: 'rgba(0,60,180,0.35)',   chip: '#c8a84b', network: 'mastercard' },
+  bni:     { gradient: 'from-[#001a33] via-[#003366] to-[#001a33]', shadow: 'rgba(0,80,180,0.35)',   chip: '#c8a84b', network: 'visa'       },
+  bri:     { gradient: 'from-[#001a00] via-[#003300] to-[#001a00]', shadow: 'rgba(0,120,0,0.35)',    chip: '#d4af37', network: 'visa'       },
+  mandiri: { gradient: 'from-[#001433] via-[#002b66] to-[#001433]', shadow: 'rgba(0,80,200,0.35)',   chip: '#c8a84b', network: 'mastercard' },
+  // E-wallets
+  gopay:     { gradient: 'from-[#001a33] via-[#00264d] to-[#001a33]', shadow: 'rgba(0,100,200,0.3)',  chip: '#c8a84b', network: 'visa' },
+  shopeepay: { gradient: 'from-[#1a0500] via-[#3d1000] to-[#1a0500]', shadow: 'rgba(200,50,0,0.3)',   chip: '#d4af37', network: 'visa' },
+  tng:       { gradient: 'from-[#001a0d] via-[#00331a] to-[#001a0d]', shadow: 'rgba(0,150,80,0.3)',   chip: '#d4af37', network: 'visa' },
+  // Cash on Hand
+  cash:      { gradient: 'from-[#0d1a0d] via-[#1a2e1a] to-[#0d1a0d]', shadow: 'rgba(34,197,94,0.25)', chip: '#86efac', network: 'cash' },
+  // Default fallback
+  default:   { gradient: 'from-[#0a0a0f] via-[#12121a] to-[#0a0a0f]', shadow: 'rgba(255,255,255,0.1)', chip: '#c8a84b', network: 'mastercard' },
+}
