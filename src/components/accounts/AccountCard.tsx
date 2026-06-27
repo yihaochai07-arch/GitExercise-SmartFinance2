@@ -12,10 +12,10 @@ interface Props {
 function ChipIcon({ color }: { color: string }) {
   return (
     <svg width="38" height="30" viewBox="0 0 38 30" fill="none">
-      <rect x="1" y="1" width="36" height="28" rx="4" stroke={color} strokeWidth="1.2" fill={${color}18} />
-      <rect x="13" y="1" width="12" height="28" stroke={color} strokeWidth="0.8" fill={${color}10} />
-      <rect x="1" y="10" width="36" height="10" stroke={color} strokeWidth="0.8" fill={${color}10} />
-      <rect x="14" y="11" width="10" height="8" rx="1" stroke={color} strokeWidth="0.8" fill={${color}20} />
+      <rect x="1" y="1" width="36" height="28" rx="4" stroke={color} strokeWidth="1.2" fill={`${color}18`} />
+      <rect x="13" y="1" width="12" height="28" stroke={color} strokeWidth="0.8" fill={`${color}10`} />
+      <rect x="1" y="10" width="36" height="10" stroke={color} strokeWidth="0.8" fill={`${color}10`} />
+      <rect x="14" y="11" width="10" height="8" rx="1" stroke={color} strokeWidth="0.8" fill={`${color}20`} />
     </svg>
   )
 }
@@ -79,7 +79,7 @@ export default function AccountCard({ account, onDelete }: Props) {
         transition-all duration-500
         hover:scale-[1.02] hover:border-white/[0.15]`}
       style={{
-        boxShadow: 0 8px 32px ${theme.shadow}, 0 2px 8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06),
+        boxShadow: `0 8px 32px ${theme.shadow}, 0 2px 8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)`,
       }}
     >
       {/* Noise texture overlay for matte effect */}
@@ -122,11 +122,11 @@ export default function AccountCard({ account, onDelete }: Props) {
 
             {/* Chip icon — top right, styled like contactless symbol */}
             <div className="w-8 h-6 rounded-md flex items-center justify-center"
-              style={{ background: ${theme.chip}22, border: 1px solid ${theme.chip}44 }}>
+              style={{ background: `${theme.chip}22`, border: `1px solid ${theme.chip}44` }}>
               <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                style={{ borderColor: ${theme.chip}80 }}>
+                style={{ borderColor: `${theme.chip}80` }}>
                 <div className="w-2 h-2 rounded-full"
-                  style={{ background: ${theme.chip}60 }} />
+                  style={{ background: `${theme.chip}60` }} />
               </div>
             </div>
           </div>
@@ -138,8 +138,8 @@ export default function AccountCard({ account, onDelete }: Props) {
           <CardDots seed={account.id} />
         </div>
 
-    {/* ── Bottom row: balance + network logo ── */}
-     <div className="flex items-end justify-between">
+        {/* ── Bottom row: balance + network logo ── */}
+        <div className="flex items-end justify-between">
           <div>
             <p className="text-[10px] text-white/30 font-medium uppercase tracking-widest mb-0.5">
               Balance
