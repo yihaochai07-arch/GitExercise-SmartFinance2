@@ -25,7 +25,6 @@ type UseTransactionsReturn = {
     loading: boolean
     error: string | null
     addTransaction: (t: NewTransaction) => Promise<Transaction | null>
-    deleteTransaction: (id: string) => Promise<boolean>
 }
 
 export function useTransactions(): UseTransactionsReturn {
@@ -77,24 +76,6 @@ export function useTransactions(): UseTransactionsReturn {
         }
     }
 
-    async function deleteTransaction(id: string): Promise<boolean> {
-        if (!user) return false
-        try {
-            const { error } = await supabase
-                .from('transactions')
-                .delete()
-                .eq('id', id)
-                .eq('user_id', user.id)
-
-            if (error) throw error
-            setTransactions(prev => prev.filter(t => t.id !== id))
-            return true
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to delete transaction')
-            return false
-        }
-    }
-
     const totalExpense = transactions
         .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + Math.abs(t.amount), 0)
@@ -103,5 +84,5 @@ export function useTransactions(): UseTransactionsReturn {
         .filter(t => t.type === 'income')
         .reduce((sum, t) => sum + Math.abs(t.amount), 0)
 
-    return { transactions, totalExpense, totalIncome, loading, error, addTransaction, deleteTransaction }
+    return { transactions, totalExpense, totalIncome, loading, error, addTransaction }
 }

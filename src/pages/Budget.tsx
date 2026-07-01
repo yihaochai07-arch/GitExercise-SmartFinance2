@@ -101,6 +101,15 @@ export default function BudgetPage() {
   const [loanFormError, setLoanFormError] = useState<string | null>(null)
   const [isSubmittingLoan, setIsSubmittingLoan] = useState(false)
   const [settlingId, setSettlingId] = useState<string | null>(null)
+  const [settledLoanIds, setSettledLoanIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const stored = window.localStorage.getItem('settledLoanIds')
+      return stored ? JSON.parse(stored) : []
+    } catch {
+      return []
+    }
+  })
   const loanYear = String(today.getFullYear())
   const [loanMonth, setLoanMonth] = useState(String(today.getMonth() + 1).padStart(2, '0'))
   const [loanDay, setLoanDay] = useState(String(today.getDate()).padStart(2, '0'))
@@ -127,6 +136,12 @@ export default function BudgetPage() {
     if (!loanAccountId && accounts.length > 0) setLoanAccountId(accounts[0].id)
   }, [accounts, loanAccountId])
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('settledLoanIds', JSON.stringify(settledLoanIds))
+    }
+  }, [settledLoanIds])
+
   // Derive loan records from transactions with loan notes
   const loanRecords = useMemo<LoanRecord[]>(() => {
     return transactions
@@ -148,14 +163,15 @@ export default function BudgetPage() {
   }, [transactions, accounts])
 
   const loanSummary = useMemo(() => {
-    const totalBorrowed = loanRecords
-      .filter(l => l.direction === 'borrowed_from')
-      .reduce((sum, l) => sum + l.amount, 0)
-    const totalLent = loanRecords
-      .filter(l => l.direction === 'lent_to')
-      .reduce((sum, l) => sum + l.amount, 0)
+    const activeLoanRecords = loanRecords.filter((loan) => !settledLoanIds.includes(loan.id))
+    const totalBorrowed = activeLoanRecords
+      .filter((loan) => loan.direction === 'borrowed_from')
+      .reduce((sum, loan) => sum + loan.amount, 0)
+    const totalLent = activeLoanRecords
+      .filter((loan) => loan.direction === 'lent_to')
+      .reduce((sum, loan) => sum + loan.amount, 0)
     return { totalBorrowed, totalLent, net: totalBorrowed - totalLent }
-  }, [loanRecords])
+  }, [loanRecords, settledLoanIds])
 
   const monthlyTransactions = useMemo(() => {
     return transactions.filter((transaction) => {
@@ -277,7 +293,7 @@ export default function BudgetPage() {
     if (!loanAccountId) { setLoanFormError('Please select an account.'); return }
 
     const transactionType = loanDirection === 'borrowed_from' ? 'income' : 'expense'
-    const loanCategory = categories.find(c => /loan|borrow/i.test(c.name)) ?? categories[0]
+    const otherCategory = categories.find(c => /^other$/i.test(c.name)) ?? categories[0]
     const noteLabel = loanDirection === 'borrowed_from'
       ? `Borrowed from: ${personTrimmed}`
       : `Lent to: ${personTrimmed}`
@@ -286,7 +302,7 @@ export default function BudgetPage() {
     const newTransaction = await addTransaction({
       amount: amountValue,
       type: transactionType,
-      category_id: loanCategory?.id ?? '',
+      category_id: otherCategory?.id ?? '',
       account_id: loanAccountId,
       date: loanDate,
       note: noteLabel,
@@ -311,6 +327,8 @@ export default function BudgetPage() {
   }
 
   async function handleSettleLoan(loan: LoanRecord) {
+    if (settledLoanIds.includes(loan.id)) return
+
     setSettlingId(loan.id)
 
     // Find the account id from accounts list
@@ -320,7 +338,7 @@ export default function BudgetPage() {
       return
     }
 
-    const loanCategory = categories.find(c => /loan|borrow/i.test(c.name)) ?? categories[0]
+    const otherCategory = categories.find(c => /^other$/i.test(c.name)) ?? categories[0]
 
     // Borrowed from someone → settling means you repay → expense
     // Lent to someone → settling means they repay you → income
@@ -332,12 +350,13 @@ export default function BudgetPage() {
     await addTransaction({
       amount: loan.amount,
       type: settleType,
-      category_id: loanCategory?.id ?? null,
+      category_id: otherCategory?.id ?? null,
       account_id: account.id,
       date: new Date().toISOString().split('T')[0],
       note: settleNote,
     })
 
+    setSettledLoanIds((prev) => prev.includes(loan.id) ? prev : [...prev, loan.id])
     setSettlingId(null)
   }
 
@@ -578,24 +597,20 @@ export default function BudgetPage() {
           )}
         </div>
 
-        {/* Loan summary cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '1rem' }}>
-          <div style={{ backgroundColor: '#000', borderRadius: '14px', padding: '1rem', border: '0.5px solid rgba(255,255,255,0.08)' }}>
-            <p style={{ fontSize: '12px', color: '#aaa', margin: '0 0 4px' }}>Total borrowed</p>
-            <p style={{ fontSize: '20px', fontWeight: 600, margin: 0, color: '#4ade80' }}>{formatCurrency(loanSummary.totalBorrowed)}</p>
-            <p style={{ fontSize: '11px', color: '#555', margin: '4px 0 0' }}>Money coming in</p>
+        {loanRecords.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '1rem' }}>
+            <div style={{ backgroundColor: '#000', borderRadius: '14px', padding: '1rem', border: '0.5px solid rgba(255,255,255,0.08)' }}>
+              <p style={{ fontSize: '12px', color: '#aaa', margin: '0 0 4px' }}>Total borrowed</p>
+              <p style={{ fontSize: '20px', fontWeight: 600, margin: 0, color: '#4ade80' }}>{formatCurrency(loanSummary.totalBorrowed)}</p>
+              <p style={{ fontSize: '11px', color: '#555', margin: '4px 0 0' }}>Money coming in</p>
+            </div>
+            <div style={{ backgroundColor: '#000', borderRadius: '14px', padding: '1rem', border: '0.5px solid rgba(255,255,255,0.08)' }}>
+              <p style={{ fontSize: '12px', color: '#aaa', margin: '0 0 4px' }}>Total lent</p>
+              <p style={{ fontSize: '20px', fontWeight: 600, margin: 0, color: '#f87171' }}>{formatCurrency(loanSummary.totalLent)}</p>
+              <p style={{ fontSize: '11px', color: '#555', margin: '4px 0 0' }}>Money going out</p>
+            </div>
           </div>
-          <div style={{ backgroundColor: '#000', borderRadius: '14px', padding: '1rem', border: '0.5px solid rgba(255,255,255,0.08)' }}>
-            <p style={{ fontSize: '12px', color: '#aaa', margin: '0 0 4px' }}>Total lent</p>
-            <p style={{ fontSize: '20px', fontWeight: 600, margin: 0, color: '#f87171' }}>{formatCurrency(loanSummary.totalLent)}</p>
-            <p style={{ fontSize: '11px', color: '#555', margin: '4px 0 0' }}>Money going out</p>
-          </div>
-          <div style={{ backgroundColor: '#000', borderRadius: '14px', padding: '1rem', border: '0.5px solid rgba(255,255,255,0.08)' }}>
-            <p style={{ fontSize: '12px', color: '#aaa', margin: '0 0 4px' }}>Net position</p>
-            <p style={{ fontSize: '20px', fontWeight: 600, margin: 0, color: loanSummary.net >= 0 ? '#4ade80' : '#f87171' }}>{formatCurrency(Math.abs(loanSummary.net))}</p>
-            <p style={{ fontSize: '11px', color: '#555', margin: '4px 0 0' }}>{loanSummary.net >= 0 ? 'You are owed more' : 'You owe more'}</p>
-          </div>
-        </div>
+        )}
 
         {/* Loan records list */}
         {loanRecords.length === 0 ? (
@@ -629,11 +644,11 @@ export default function BudgetPage() {
                   </div>
                   <button
                     onClick={() => handleSettleLoan(loan)}
-                    disabled={settlingId === loan.id}
-                    title={loan.direction === 'borrowed_from' ? 'Mark as repaid' : 'Mark as settled'}
-                    style={{ background: 'none', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '5px 10px', color: settlingId === loan.id ? '#555' : '#aaa', fontSize: '12px', cursor: settlingId === loan.id ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
+                    disabled={settlingId === loan.id || settledLoanIds.includes(loan.id)}
+                    title="Mark as settled"
+                    style={{ background: 'none', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '5px 10px', color: settlingId === loan.id || settledLoanIds.includes(loan.id) ? '#555' : '#aaa', fontSize: '12px', cursor: settlingId === loan.id || settledLoanIds.includes(loan.id) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
                   >
-                    {settlingId === loan.id ? '...' : '✓ Settle'}
+                    {settlingId === loan.id ? '...' : settledLoanIds.includes(loan.id) ? 'Settled' : 'Settle'}
                   </button>
                 </div>
               </div>

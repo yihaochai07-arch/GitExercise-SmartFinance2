@@ -10,11 +10,8 @@ export type Budget = {
     created_at: string
 }
 
-export type BudgetStatus = 'safe' | 'warning' | 'exceeded'
-
 type UseBudgetsReturn = {
     budgets: Budget[]
-    getBudgetStatus: (spent: number, limit: number) => BudgetStatus
     loading: boolean
     saving: boolean
     error: string | null
@@ -85,12 +82,6 @@ export function useBudgets(): UseBudgetsReturn {
             setSaving(false)
         }
     }
-    function getBudgetStatus(spent: number, limit: number): BudgetStatus {
-        const ratio = spent / limit
-        if (ratio < 0.8) return "safe"
-        if (ratio < 1) return "warning"
-        return "exceeded"
-    }
 
-    return { budgets, getBudgetStatus, loading, saving, error, saveBudget }
+    return { budgets, loading, saving, error, saveBudget }
 }
