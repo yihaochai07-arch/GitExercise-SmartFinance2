@@ -13,10 +13,12 @@ import Transactions from './pages/Transactions';
 import Goals from './pages/Goals';
 import Reports from './pages/Reports';
 import Budget from './pages/Budget';
+import { ThemeProvider } from './context/ThemeContext';
 
 
 function App() {
   return (
+  <ThemeProvider>
     <BrowserRouter>
       <AuthProvider>
         <Routes>
@@ -39,6 +41,7 @@ function App() {
         </Routes>
       </AuthProvider>
     </BrowserRouter>
+  </ThemeProvider>
   );
 }
 
