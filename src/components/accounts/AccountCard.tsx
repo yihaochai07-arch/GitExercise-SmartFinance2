@@ -33,28 +33,12 @@ function MastercardLogo() {
 // ── Visa logo ─────────────────────────────────────────────────────
 function VisaLogo() {
   return (
-    <span className="text-white/70 font-black italic tracking-tight text-lg leading-none"
-      style={{ fontFamily: 'Georgia, serif', letterSpacing: '-0.5px' }}>
+    <span
+      className="text-white/70 font-black italic tracking-tight text-lg leading-none"
+      style={{ fontFamily: 'Georgia, serif', letterSpacing: '-0.5px' }}
+    >
       VISA
     </span>
-  )
-}
-
-// ── Card number dots ──────────────────────────────────────────────
-function CardDots({ seed }: { seed: string }) {
-  // Generate a stable last-4 from the account id seed
-  const last4 = seed.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 9000 + 1000
-  return (
-    <div className="flex items-center gap-3">
-      {[0, 1, 2].map(i => (
-        <div key={i} className="flex gap-1">
-          {[0, 1, 2, 3].map(j => (
-            <div key={j} className="w-1 h-1 rounded-full bg-white/40" />
-          ))}
-        </div>
-      ))}
-      <span className="text-white/70 text-sm font-medium tracking-widest">{last4}</span>
-    </div>
   )
 }
 
@@ -86,7 +70,8 @@ export default function AccountCard({ account, onDelete }: Props) {
       <div
         className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
-          backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")',
+          backgroundImage:
+            'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")',
           backgroundSize: '128px 128px',
         }}
       />
@@ -109,7 +94,6 @@ export default function AccountCard({ account, onDelete }: Props) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Demo/Live badge */}
             {account.isLive ? (
               <span className="text-[9px] font-semibold text-emerald-400 bg-emerald-500/15 border border-emerald-500/25 px-1.5 py-0.5 rounded-full">
                 Live
@@ -120,47 +104,43 @@ export default function AccountCard({ account, onDelete }: Props) {
               </span>
             )}
 
-            {/* Chip icon — top right, styled like contactless symbol */}
-            <div className="w-8 h-6 rounded-md flex items-center justify-center"
-              style={{ background: `${theme.chip}22`, border: `1px solid ${theme.chip}44` }}>
-              <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                style={{ borderColor: `${theme.chip}80` }}>
-                <div className="w-2 h-2 rounded-full"
-                  style={{ background: `${theme.chip}60` }} />
+            <div
+              className="w-8 h-6 rounded-md flex items-center justify-center"
+              style={{ background: `${theme.chip}22`, border: `1px solid ${theme.chip}44` }}
+            >
+              <div
+                className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                style={{ borderColor: `${theme.chip}80` }}
+              >
+                <div className="w-2 h-2 rounded-full" style={{ background: `${theme.chip}60` }} />
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── Middle row: EMV chip ── */}
+        {/* ── Middle row: EMV chip + Balance ── */}
         <div className="flex items-center gap-4">
           <ChipIcon color={theme.chip} />
-          <CardDots seed={account.id} />
+          {account.isLoading ? (
+            <div className="h-6 w-28 bg-white/[0.08] rounded animate-pulse" />
+          ) : (
+            <p className="text-xl font-bold text-white tracking-tight">
+              {account.displayBalance}
+            </p>
+          )}
         </div>
 
-        {/* ── Bottom row: balance + network logo ── */}
+        {/* ── Bottom row: country/currency + network logo ── */}
         <div className="flex items-end justify-between">
-          <div>
-            <p className="text-[10px] text-white/30 font-medium uppercase tracking-widest mb-0.5">
-              Balance
-            </p>
-            {account.isLoading ? (
-              <div className="h-6 w-28 bg-white/[0.08] rounded animate-pulse" />
-            ) : (
-              <p className="text-xl font-bold text-white tracking-tight">
-                {account.displayBalance}
-              </p>
-            )}
-            <div className="flex items-center gap-1.5 mt-1">
-              <p className="text-[10px] text-white/25">
-                {account.provider.country === 'ID' ? 'Indonesia'
-                  : account.provider.country === 'SG' ? 'Singapore'
-                  : 'Malaysia'} · {account.currency}
-              </p>
-            </div>
-          </div>
+          <p className="text-[10px] text-white/25">
+            {account.provider.country === 'ID'
+              ? 'Indonesia'
+              : account.provider.country === 'SG'
+              ? 'Singapore'
+              : 'Malaysia'}{' '}
+            · {account.currency}
+          </p>
 
-          {/* Network logo */}
           <div className="flex items-center">
             {theme.network === 'mastercard' && <MastercardLogo />}
             {theme.network === 'visa' && <VisaLogo />}
